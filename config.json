@@ -1,0 +1,7 @@
+{
+
+  "outdir" : "./",
+  "targets" : "../testData/genes.fasta",
+  "genomes" : "../testData/genes.fasta",
+  "fastq" : { "1" : [ "../testData/1_r1.fastq", "../testData/1_r2.fastq" ],
+              "2" : [ "../testData/2_r1.fastq", "../testData/2_r2.fastq" ] }
