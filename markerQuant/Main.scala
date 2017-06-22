@@ -3,7 +3,7 @@ package markerQuant {
 object Main{
 
   val ops = Map("markers" -> UniqueMarkers,
-                //"quant"   -> Quantify,
+                "quant"   -> Quantify,
                 "test"    -> Test)
 
   def main(args: Array[String]) = {

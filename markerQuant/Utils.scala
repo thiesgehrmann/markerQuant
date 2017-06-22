@@ -39,6 +39,19 @@ object Utils {
     map1 ++ map2.map{ case (k,v) => k -> (v + map1.getOrElse(k,0)) }
   }
 
+  class CountMap[T] {
+    var counts = scala.collection.mutable.HashMap.empty[T,Int]
+
+    def add(items: Iterable[T]){
+       items.foreach{ i =>
+         counts += (i -> (counts.getOrElse(i,0)+1))
+       }
+    }
+
+    def get = this.counts
+  }
+
+
 }
 
 }

@@ -4,15 +4,15 @@ object Test extends ActionObject {
 
   override def main(args: Array[String]) = {
     args(0) match {
-      case "1" => { println("test1")
-                    this.test1 }
-      case opt => { println("Unknown test") }
+      case "markergen" => this.markergen
+      case opt         => { println("Unknown test") }
     }
   }
 
-  def test1 = {
+  def markergen = {
 
-    val sequence = Fasta.Entry("test", Fasta.FastaSeq.fromString("AAAAAAAAAATAAAAAAAAAAAAAAAAAAAAATAAAAAAAAAAAAAAAAAAAAAAT"))
+    val sequence = Fasta.Entry("test", BioSeq.DNASeq.fromString("AAAAAAAAAATGAAAAAAAAAAAAAAAAAAAAATAAAAAAAAAAAAAAAAAAAAAAT"))
+    val genome   = Array(sequence, Fasta.Entry("test2", BioSeq.DNASeq.fromString("TGATGTGATGGATAAAAAAAAAAAAAAAAAAAAATAGaaaaaaaaaaaaaaataaaaa")))
     val kmers    = Markers.genKmers(sequence.sequence, 21)
 
     println(sequence.toString)
@@ -22,16 +22,16 @@ object Test extends ActionObject {
     kmers.toSet.foreach{ k: Markers.Kmer => println("%d: %s".format(k.index, k.seq.toString)) }
 
     println("\nAnd the Unique:")
-    val uniqueKmers = Markers.uniqueKmers(kmers)
+    val uniqueKmers = Markers.uniqueKmers(kmers).toArray.sortBy(_.index)
     uniqueKmers.foreach{k: Markers.Kmer => println("%d: %s".format(k.index, k.seq.toString)) }
 
-    val kmerCounts = Markers.kmerCounts(Array(sequence, Fasta.Entry("test", Fasta.FastaSeq.fromString("TGATGTGATGGATAAAAAAAAAAAAAAAAAAAAATAGaaaaaaaaaaaaaaataaaaa"))), 21)
+    val kmerCounts = Markers.kmerCounts(genome ++ genome.map(_.revcomp), 21)
     println("\nAnd the counts:")
-    kmerCounts.foreach{ case (k,v) => println("%d: %s: %d".format(k.index, k.seq.toString, v))}
+    kmerCounts.keys.toArray.sortBy(_.index).foreach{ k => println("%d: %s: %d".format(k.index, k.seq.toString, kmerCounts(k)))}
 
     println("\nAnd the single count markers:")
-    val single = Markers.singleCountKmers(uniqueKmers, kmerCounts)
-    Markers.singleCountKmers(uniqueKmers, kmerCounts).foreach{k: Markers.Kmer => println("%d: %s".format(k.index, k.seq.toString)) }
+    val single = Markers.singleCountKmers(uniqueKmers, kmerCounts, false)
+    single.foreach{k: Markers.Kmer => println("%d: %s".format(k.index, k.seq.toString)) }
 
     val aggregated = Markers.aggregateRedundant(single)
     println("\nAnd the aggregated markers")

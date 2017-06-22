@@ -11,7 +11,7 @@ package markerQuant {
 
 object UniqueMarkers extends ActionObject {
 
-  override def description = "Find unique markers a set of genes and genomes"
+  override val description = "Find unique markers a set of genes and genomes"
 
   /////////////////////////////////////////////////////////////////////////////
 
@@ -28,33 +28,47 @@ object UniqueMarkers extends ActionObject {
     val inputGenomes = arguments("genomes").split(',')
     val k            = arguments("k").toInt
     val outPrefix    = arguments("outprefix")
-    val strSpecific  = if (arguments("singleStrand") == "True") true else false
+    val strSpecific  = if (arguments("strandSpecific") == "True") true else false
 
       // Read the target genes
     val targets  = inputFastas.map(Fasta.read(_).toArray).flatten
       // Read genome FASTA files
     val genomes = inputGenomes.map(Fasta.read(_).toArray).flatten;
 
-    val kmerCounts  = Markers.kmerCounts(genomes, k)
-    val targetKmers = targets.map(s => Markers.aggregateRedundant(Markers.singleCountKmers(Markers.uniqueKmers(Markers.genKmers(s.sequence, k)), kmerCounts)))
-    val gapKmers    = targetKmers.flatten.map( Markers.aggregatedKmerGaps(_, k, kmerCounts)).flatten
+    Utils.message("Counting Kmers.")
+    val kmerCountsGenomes = Markers.kmerCounts(genomes ++ genomes.map(_.revcomp), k)
+    val kmerCountsTargets = Markers.kmerCounts(targets, k)
+    //kmerCountsGenomes.foreach{ case (k,v) => println("%s: %d, %d".format(k.seq, v, kmerCountsTargets.getOrElse(k,0)))}
 
-    println("Kmers to use:")
+    Utils.message("Filtering generated Kmers for the target sequences.")
+    val filteredKmers = targets.map(s => Markers.singleCountKmers(Markers.singleCountKmers(Markers.uniqueKmers(Markers.genKmers(s.sequence, k)), kmerCountsGenomes, strSpecific), kmerCountsTargets, strSpecific))
+    //filteredKmers.foreach(group => group.foreach{ k => println("%d: %s".format(k.index, k.seq.toString))})
+
+    Utils.message("Aggregating the Kmers.")
+    val targetKmers = filteredKmers.map(Markers.aggregateRedundant(_))
+
+    Utils.message("Finding gaps in the kmers")
+    val gapKmers = targetKmers.map( group => group.map(Markers.aggregatedKmerGaps(_, k, kmerCountsGenomes)))
+
+    //println("Kmers to use:")
     val faKmers = targetKmers.zipWithIndex.map{ case (kmers, index) =>
       val targetDescription = targets(index).description
       kmers.map{ kmer => Fasta.Entry("%s:%d".format(targetDescription, kmer.index), kmer.seq) }
     }.flatten
     Fasta.write(faKmers, "%s%s".format(outPrefix, "markers.fasta"))
 
-    targetKmers.flatten.map{k: Markers.Kmer => println("%d: %s".format(k.index, k.seq.toString)) }
+    //targetKmers.flatten.map{k: Markers.Kmer => println("%d: %s".format(k.index, k.seq.toString)) }
 
-    println("Gap kmers to skip:")
-    val faGaps = gapKmers.zipWithIndex.map{ case (kmer, index) =>
-      val targetDescription = targets(index).description
-      Fasta.Entry("%s:%d".format(targetDescription, kmer.index), kmer.seq)
-    }
+    //println("Gap kmers to skip:")
+    val faGaps = gapKmers.zipWithIndex.map{ case (kmers, index) =>
+      kmers.map{ kmerGaps =>
+        kmerGaps.map{ gap =>
+          Fasta.Entry("%s:%d".format(targets(index).description, gap.index), gap.seq)
+        }
+      }.flatten
+    }.flatten
     Fasta.write(faGaps, "%s%s".format(outPrefix, "gaps.fasta"))
-    gapKmers.map{k: Markers.Kmer => println("%d: %s".format(k.index, k.seq.toString)) }
+    //faGaps.foreach( g => println("%s: %s".format(g.description, g.sequence)))
 
     System.exit(0);
 
@@ -62,7 +76,7 @@ object UniqueMarkers extends ActionObject {
 
   /////////////////////////////////////////////////////////////////////////////
 
-  val defaultArgs = Map("singleStrand" -> "False",
+  val defaultArgs = Map("strandSpecific" -> "False",
                         "outprefix" -> "./",
                         "k" -> "21")
 
@@ -85,7 +99,7 @@ object UniqueMarkers extends ActionObject {
           processArgsHelper(tail, options ++ Map("k" -> value))
         }
         case "-s" :: tail => {
-          processArgsHelper(tail, options ++ Map("singleStrand" -> "True"))
+          processArgsHelper(tail, options ++ Map("strandSpecific" -> "True"))
         }
         case "-o" :: value :: tail => {
           processArgsHelper(tail, options ++ Map("outprefix" -> value))
