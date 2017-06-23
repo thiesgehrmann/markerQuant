@@ -7,24 +7,16 @@ package markerQuant {
 
 object Quantification {
 
-  def genTree(fastaKmers: Iterable[Fasta.Entry], fastaGaps: Iterable[Fasta.Entry], k: Int, strandSpecific: Boolean) = {
-   
-    val gaps = if (!strandSpecific) {
-        fastaGaps.zipWithIndex.map{ case (f,i) => Markers.Kmer(f.sequence, i) }.toSet union fastaGaps.zipWithIndex.map{ case (f,i) => Markers.Kmer(f.sequence.revcomp, i) }.toSet
-      } else {
-        fastaGaps.zipWithIndex.map{ case (f,i) => Markers.Kmer(f.sequence, i) }.toSet
-      }
+  def genTree(fastaKmers: Iterable[Fasta.Entry], fastaGaps: Iterable[Fasta.Entry], k: Int) = {
+  
+    val gaps = fastaGaps.zipWithIndex.map{ case (f,i) => Markers.Kmer(f.sequence, i) }.toSet
  
     val tree = new AhoCorasick()
 
     fastaKmers.foreach{f =>
       Markers.genKmers(f.sequence, k).filter( s => !gaps.contains(s)).zipWithIndex.foreach{ case (s,i) =>
-        tree.add(s.seq.toString.getBytes, "%d:%s".format(i, f.description))
-      }
-      if (!strandSpecific){
-        Markers.genKmers(f.sequence.revcomp, k).filter( s => !gaps.contains(s)).zipWithIndex.foreach{ case (s,i) =>
-          tree.add(s.seq.toString.getBytes, "RC_%d:%s".format(i, f.description))
-        }
+        //Utils.message("Adding '%s[%d] : %s' to tree".format(f.description, i, s.seq.toString))
+        tree.add(s.seq.toString.getBytes, "%s".format(f.description))
       }
     }
 
@@ -33,11 +25,18 @@ object Quantification {
 
   }
 
-  def findInTree(tree: AhoCorasick, f: Array[Fastq.Entry]) = {
+  def findInTree(trees: Array[AhoCorasick], f: Array[Fastq.Entry]) = {
     /* Perform the search for each read end */
-    val result = f.map(r => tree.search(r.sequence.toString.getBytes))
-    /*For each result, remove the id at the start, and use only the stuff after the ':' */
-    result.map( x => x.asInstanceOf[SearchResult].getOutputs.toArray.map(y => y.asInstanceOf[String])).flatten.map(m => m.substring(m.indexOf(':')+1)).toArray
+    //Utils.message("Checking sequences:\n%s\n".format(f.map(_.sequence.toString).mkString("\n")))
+    val result = f.zipWithIndex.map{ case (r,i) => trees(i).search(r.sequence.toString.getBytes).asInstanceOf[java.util.Iterator[SearchResult]].asScala.toArray}.flatten
+    //.zipWithIndex.map{ case (r, i) => // To test if the different pairs are matched with the tree. CHECK AGAIN FOR STRAND SPECIFIC!!!!
+    //  println("%d: %d results".format(i, r.map(_.asInstanceOf[SearchResult].getOutputs.toArray).flatten.length))
+    //  r
+    //}.flatten
+    result.map( x => x.asInstanceOf[SearchResult].getOutputs.toArray.map{y => 
+      //Utils.message(y.asInstanceOf[String])
+      y.asInstanceOf[String]
+    }).flatten.toArray
   }
 
 }

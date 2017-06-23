@@ -15,6 +15,7 @@ object Quantify extends ActionObject {
 
     if (!(( options contains "markers") && (options contains "gaps") && (options contains "fastq"))){
       Utils.error("You must define -m, -g and -f")
+      System.exit(1)
     }
 
     val fastaKmer = Fasta.read(options("markers")).toArray
@@ -25,23 +26,34 @@ object Quantify extends ActionObject {
     val outFile   = options("out")
     val counts    = new Utils.CountMap[String]
 
-    val tree = Quantification.genTree(fastaKmer, fastaGaps, k, sSpecific)
+    val tree = if (sSpecific) { Quantification.genTree(fastaKmer, fastaGaps, k) } else { Quantification.genTree(fastaKmer ++ fastaKmer.map(_.revcomp), fastaGaps ++ fastaGaps.map(_.revcomp), k) }
+    val trees = if (!sSpecific && fastq.length > 1) {
+        Array(tree, tree)
+      } else if (sSpecific && fastq.length > 1) {
+        Array(tree, Quantification.genTree(fastaKmer.map(_.revcomp), fastaGaps, k))
+      } else if (!sSpecific && fastq.length == 1) {
+        Array(tree)
+      } else {
+        Array(tree)
+      }
+    
 
+    Utils.message("Counting markers")
     while(fastq.forall(_.hasNext)){
       val reads   = fastq.map(_.next).toArray
-      val markers = Quantification.findInTree(tree, reads)
+      val markers = Quantification.findInTree(trees, reads).toSet
       counts.add(markers)
     }
 
     val outfd = new PrintWriter(new FileWriter(outFile, false))
-    counts.get.foreach{ case (id, count) =>
-      outfd.write("%s\t%d\n".format(id, count))
+    fastaKmer.map(_.description).foreach{ id =>
+      outfd.write("%s\t%d\n".format(id, counts(id)))
     }
     outfd.close()
 
   }
 
-  val defaultArgs = Map("singleStrand" -> "False",
+  val defaultArgs = Map("strandSpecific" -> "False",
                         "out" -> "./quantification.tsv",
                         "k" -> "21")
 
@@ -66,7 +78,7 @@ object Quantify extends ActionObject {
           processArgsHelper(tail, options ++ Map("k" -> value))
         }
         case "-s" :: tail => {
-          processArgsHelper(tail, options ++ Map("singleStrand" -> "True"))
+          processArgsHelper(tail, options ++ Map("strandSpecific" -> "True"))
         }
         case opt :: tail => {
           Utils.warning("Option '%s' unknown.".format(opt))

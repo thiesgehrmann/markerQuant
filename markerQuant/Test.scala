@@ -1,3 +1,8 @@
+import org.arabidopsis.ahocorasick.AhoCorasick
+import org.arabidopsis.ahocorasick.SearchResult
+
+import scala.collection.JavaConverters._
+
 package markerQuant {
 
 object Test extends ActionObject {
@@ -5,6 +10,7 @@ object Test extends ActionObject {
   override def main(args: Array[String]) = {
     args(0) match {
       case "markergen" => this.markergen
+      case "treetest"  => this.treetest
       case opt         => { println("Unknown test") }
     }
   }
@@ -37,9 +43,22 @@ object Test extends ActionObject {
     println("\nAnd the aggregated markers")
     aggregated.foreach{k: Markers.Kmer => println("%d: %s".format(k.index, k.seq.toString)) }
 
-    val gaps = aggregated.map(Markers.aggregatedKmerGaps(_, 21, kmerCounts)).flatten
+    val gaps = aggregated.map(Markers.aggregatedKmerGaps(_, 21, kmerCounts, false)).flatten
     println("\nAnd the gaps to skip!")
     gaps.foreach{k: Markers.Kmer => println("%d: %s".format(k.index, k.seq.toString)) }
+
+  }
+
+
+  def treetest = {
+
+    val tree = new AhoCorasick()
+    tree.add("AAAAAA".getBytes, "id1")
+    tree.add("TTTTTT".getBytes, "id1")
+
+    tree.prepare()
+
+    tree.search("AAAAAATTTTTT".getBytes).asInstanceOf[java.util.Iterator[SearchResult]].asScala.toArray.foreach( r => r.asInstanceOf[SearchResult].getOutputs.toArray.foreach{ rs => println(rs.asInstanceOf[String])})
 
   }
 

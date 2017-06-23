@@ -1,7 +1,12 @@
 {
 
-  "outdir" : "./",
-  "targets" : "../testData/genes.fasta",
-  "genomes" : "../testData/genes.fasta",
-  "fastq" : { "1" : [ "../testData/1_r1.fastq", "../testData/1_r2.fastq" ],
-              "2" : [ "../testData/2_r1.fastq", "../testData/2_r2.fastq" ] }
+  "outdir" : "/home/thiesgehrmann/projects/pascale_markers/markerQuant/testOutput",
+  "targets" : "testData/tdh_genes.fasta",
+  "genomes" : "testData/genome.fasta",
+  "strandSpecific" : 0,
+  "samples" : { "sample_1_r1" : { "replicate_group" : "sample_1",  "fastq" : [ "testData/simulated_data/sample_01_1.fastq", "testData/simulated_data/sample_01_2.fastq" ]} ,
+                "sample_1_r2" : { "replicate_group" : "sample_1",  "fastq" : [ "testData/simulated_data/sample_02_1.fastq", "testData/simulated_data/sample_02_2.fastq" ]} ,
+                "sample_2_r1" : { "replicate_group" : "sample_2",  "fastq" : [ "testData/simulated_data/sample_03_1.fastq", "testData/simulated_data/sample_03_2.fastq" ]} ,
+                "sample_2_r2" : { "replicate_group" : "sample_2",  "fastq" : [ "testData/simulated_data/sample_04_1.fastq", "testData/simulated_data/sample_04_2.fastq" ]} },
+  "tests" : [ ["sample_1", "sample_2"] ]
+}

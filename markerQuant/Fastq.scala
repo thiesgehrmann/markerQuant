@@ -37,11 +37,11 @@ object Fastq {
                 untilNext(seqid, line, "", 2)
               }
               case 2 => {
-                if(line == '+'){
-                  untilNext(seqid, line, "", 3)
+                if(line.charAt(0) == '+'){
+                  untilNext(seqid, seq, "", 3)
                 } else {
                   Utils.warning("Error on line %d. Expected '+' symbol.".format(this.nlines))
-                  untilNext(seqid, line, "", 2)
+                  untilNext(seqid, seq, "", 2)
                 }
               }
               case 3 => {

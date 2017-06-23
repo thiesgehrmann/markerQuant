@@ -49,6 +49,7 @@ object Utils {
     }
 
     def get = this.counts
+    def apply(key:T) = this.counts.getOrElse(key,0)
   }
 
 

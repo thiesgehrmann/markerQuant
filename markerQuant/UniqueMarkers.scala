@@ -21,6 +21,7 @@ object UniqueMarkers extends ActionObject {
 
     if (!arguments.contains("targets") || !arguments.contains("genomes")) {
       Utils.error("You need to define a targets file and a genome file")
+      System.exit(1)
     }
 
       // Read input
@@ -37,7 +38,11 @@ object UniqueMarkers extends ActionObject {
 
     Utils.message("Counting Kmers.")
     val kmerCountsGenomes = Markers.kmerCounts(genomes ++ genomes.map(_.revcomp), k)
-    val kmerCountsTargets = Markers.kmerCounts(targets, k)
+    val kmerCountsTargets = if(strSpecific) {
+      Markers.kmerCounts(targets, k)
+    } else {
+      Markers.kmerCounts(targets ++ targets.map(_.revcomp), k)
+    }
     //kmerCountsGenomes.foreach{ case (k,v) => println("%s: %d, %d".format(k.seq, v, kmerCountsTargets.getOrElse(k,0)))}
 
     Utils.message("Filtering generated Kmers for the target sequences.")
@@ -47,8 +52,8 @@ object UniqueMarkers extends ActionObject {
     Utils.message("Aggregating the Kmers.")
     val targetKmers = filteredKmers.map(Markers.aggregateRedundant(_))
 
-    Utils.message("Finding gaps in the kmers")
-    val gapKmers = targetKmers.map( group => group.map(Markers.aggregatedKmerGaps(_, k, kmerCountsGenomes)))
+    Utils.message("Finding gaps in the aggregated kmers")
+    val gapKmers = targetKmers.map( group => group.map( kmer => Markers.aggregatedKmerGaps(kmer, k, kmerCountsGenomes, strSpecific).toSet union Markers.aggregatedKmerGaps(kmer, k, kmerCountsTargets, strSpecific).toSet))
 
     //println("Kmers to use:")
     val faKmers = targetKmers.zipWithIndex.map{ case (kmers, index) =>

@@ -50,8 +50,7 @@ object Markers {
   def uniqueKmerGroups(kmers: Seq[Seq[Kmer]]) : Seq[Seq[Kmer]] = {
     val counts = new Utils.CountMap[Kmer]
     kmers.foreach(group => counts.add(group))
-    val counted = counts.get
-    kmers.map(group => group.filter(kmer => (counted.getOrElse(kmer,1) == 1)))
+    kmers.map(group => group.filter(kmer => (counts(kmer) <= 1)))
   }
 
   def uniqueKmers(kmers: Seq[Kmer]) = {
@@ -73,7 +72,7 @@ object Markers {
     if (strandSpecific) {
       kmers.filter{ kmer =>
         //println("%d:%s -> %d".format(kmer.index, kmer.seq.toString, kmerCounts.getOrElse(kmer,1)))
-        kmerCounts.getOrElse(kmer,1) <= 1}
+        kmerCounts.getOrElse(kmer,0) <= 1}
     } else {
       kmers.filter{kmer =>
         //println("%d: %s -> %d".format(kmer.index, kmer.seq.toString, kmerCounts.getOrElse(kmer,0) + kmerCounts.getOrElse(kmer.revcomp,0)))
@@ -101,9 +100,14 @@ object Markers {
     }
   }
 
-  def aggregatedKmerGaps(kmer: Kmer, k: Int, kmerCounts: Map[Kmer,Int]) = {
+  def aggregatedKmerGaps(kmer: Kmer, k: Int, kmerCounts: Map[Kmer,Int], strandSpecific: Boolean) = {
     val aggStartIndex = kmer.index - kmer.seq.length + ((k-1)/2)+1
-    genKmers(kmer.seq, k).filter(kmerCounts.getOrElse(_,1) > 1).map( e => new Kmer(e.seq, e.index + aggStartIndex))
+    if (strandSpecific) {
+      genKmers(kmer.seq, k)
+    } else {
+      val kmers = genKmers(kmer.seq, k)
+      (kmers ++ kmers.map(_.revcomp))
+    }.filter(kmerCounts.getOrElse(_,1) > 1).map( e => new Kmer(e.seq, e.index + aggStartIndex))
   }
 
 }
