@@ -1,10 +1,10 @@
-configfile: "config.json"
+#configfile: "config.json"
 
 import inspect, os
 __INSTALL_DIR__ = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 __PC_DIR__ = "%s/pipeline_components" % __INSTALL_DIR__
 __JAR__         = "%s/markerQuant/markerQuant.jar" % __INSTALL_DIR__
-__RUN_DIR__ = config["outdir"] + "/run"
+__RUN_DIR__ = os.path.abspath(config["outdir"]) + "/run"
 
 
 __MARKER_OUTDIR__ = "%s/markers" % __RUN_DIR__
