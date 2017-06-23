@@ -13,15 +13,37 @@ The example provided will run for approximately 3.4 minutes on a single core mac
 
     git clone https://github.com/thiesgehrmann/markerQuant.git
     cd markerQuant
-    snakemake --use-conda --configfile testData/config.json quantifiedMarkers
+    snakemake --use-conda --configfile testData/config.json quantifyTargets
+
+### Tasks
+
+There are several tasks that you can run
+
+ * **generateMarkers**: Generate markers for the targets specified in the config file
+ * **quantifyTargets**: Quantify the targets specified in the config file
+ * **deseqTests**: Perform the differential expression tests specified in the config file.
+ * **deseqNorm**: Normalize the expression based on the library size
+ * **deseq**: Normalize and do the tests
 
 ## Output files
 
-*`outdir`/run/quantification/target_counts.`sample`.tsv*
+Each of these tasks generates a different set of output files
 
-A table describing, in sample `sample`, the number of markers per gene, the number of counts per marker, and the average and standard deviation of these.
+### generateMarkers
 
-*`outdir`/run/quantification/quantification.tsv`*
+ * *run/markers/markers.fasta*: Aggregated markers to use in the tree
+ * */run/markers/gaps.fasta*: Gaps in the aggregated markers that cannot be used for identification
 
-Essentially the table of expression counts that need to go into DESeq. Rows are genes, columns are samples.
+### quantifyTargets
+
+ * *run/quantification/target_counts.`sample`.tsv*: A table describing, in sample `sample`, the number of markers per gene, the number of counts per marker, and the average and standard deviation of these.
+ * *run/quantification/quantification.tsv`*: Essentially the table of expression counts that need to go into DESeq. Rows are genes, columns are samples.
+
+### deseqTests
+
+* *run/diffex/tests.tsv*: A table of differential expression tests
+
+### deseqNorm
+
+* *run/diffex/quantification.normalized.tsv*: Perform normalization of transcript abundance
   

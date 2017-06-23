@@ -79,7 +79,7 @@ rule averageMarkers:
     #ewith
      
 
-rule quantifiedMarkers:
+rule quantifyTargets:
   input:
     quant = expand( "%s/target_counts.{sample}.tsv" % (__QUANT_OUTDIR__), sample=config["samples"].keys())
   output:
@@ -98,14 +98,14 @@ rule quantifiedMarkers:
       with open(output.quant, "w") as ofd:
         ofd.write("target\t%s\n" % '\t'.join(samples))
         for target in sorted(list(data[list(data.keys())[0]].keys())):
-          ofd.write("%s\t%s\n" % (target, '\t'.join([ data[sample][target][0] for sample in samples])))
+          ofd.write("%s\t%d\n" % (target, '\t'.join([ int(data[sample][target][0]) for sample in samples])))
         #efor
       #ewith
     #fi
 
 __DIFF_OUTDIR__ = "%s/diffex" % __RUN_DIR__
 
-rule deseq_sample_info_table:
+rule deseqSampleInfoTable:
   output:
     table = "%s/sample_info.tsv"% __DIFF_OUTDIR__
   run:
@@ -117,9 +117,9 @@ rule deseq_sample_info_table:
       #efor
     #ewith
 
-rule deseq_test:
+rule deseqTest:
   input:
-    quant       = rules.quantifiedMarkers.output.quant,
+    quant       = rules.quantifyTargets.output.quant,
     sample_info = rules.deseq_sample_info_table.output.table
   output:
     diff = "%s/test.{test}.output.tsv" %__DIFF_OUTDIR__
@@ -132,8 +132,31 @@ rule deseq_test:
     Rscript {params.deseq_wrapper} '{input.quant}' {input.sample_info} {params.sample1} {params.sample2} {output.diff}
   """
 
-rule allDeseq:
+rule deseqTests:
   input:
-    deseqs = expand("%s/test.{test}.output.tsv" % __DIFF_OUTDIR__, test=[ "%s-%s" % (a,b) for (a,b) in config["tests"] ])
+    tests = expand("%s/test.{test}.output.tsv" % __DIFF_OUTDIR__, test=[ "%s-%s" % (a,b) for (a,b) in config["tests"] ])
+  output:
+    tests = "%s/tests.tsv"% __DIFF_OUTDIR__
+  shell: """
+    cat {input.deseqs} > {output.tests}
+  """
+
+rule deseqNorm:
+  input:
+    quant       = rules.quantifyTargets.output.quant,
+    sample_info = rules.deseq_sample_info_table.output.table
+  output:
+    norm = "%s/quantification.normalized.tsv" %__DIFF_OUTDIR__
+  conda : "%s/pipeline_components/env.yaml"% __INSTALL_DIR__
+  params:
+    deseq_wrapper = "%s/deseq_norm.R" % __PC_DIR__
+  shell: """
+    Rscript {params.deseq_wrapper} '{input.quant}' {input.sample_info} {output.norm}
+  """
+
+rule deseq:
+  input:
+    tests = rules.deseqTests.output.tests,
+    norm  = rules.deseqNorm.output.norm
 
 
