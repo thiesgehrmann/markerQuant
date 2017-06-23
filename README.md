@@ -32,7 +32,7 @@ Each of these tasks generates a different set of output files
 ### generateMarkers
 
  * *run/markers/markers.fasta*: Aggregated markers to use in the tree
- * */run/markers/gaps.fasta*: Gaps in the aggregated markers that cannot be used for identification
+ * *run/markers/gaps.fasta*: Gaps in the aggregated markers that cannot be used for identification
 
 ### quantifyTargets
 
@@ -45,5 +45,5 @@ Each of these tasks generates a different set of output files
 
 ### deseqNorm
 
-* *run/diffex/quantification.normalized.tsv*: Perform normalization of transcript abundance
+* *run/diffex/quantification.normalized.tsv*: Normalized transcript abundance
   
