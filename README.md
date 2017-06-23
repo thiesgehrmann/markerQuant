@@ -9,6 +9,8 @@ Determine transcriptome expression based on unique markers
 
 ## Usage
 
+The example provided will run for approximately 3.4 minutes on a single core machine
+
     git clone https://github.com/thiesgehrmann/markerQuant.git
     cd markerQuant
     snakemake --use-conda --configfile testData/config.json quantifiedMarkers
