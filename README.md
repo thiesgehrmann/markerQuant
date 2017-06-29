@@ -17,9 +17,9 @@ The example provided will run for approximately 3.4 minutes on a single core mac
     snakemake --use-conda --configfile testData/config.json quantifyTargets # Unstranded RNA-Seq
     snakemake --use-conda --configfile testData/config_stranded.json quantifyTargets # Stranded RNA-Seq
 
-You can compare the results from a normal RNA-Seq pipeline (STAR + htseq_count)
-  snakemake --use-conda --configfile testData/config.json --snakefile align.Snakefile quantifyTargets
-  snakemake --use-conda --configfile testData/config_stranded.json --snakefile align.Snakefile quantifyTargets
+You can compare the results from a normal RNA-Seq pipeline (STAR + htseq_count + DESeq2)
+    snakemake --use-conda --configfile testData/config.json --snakefile align.Snakefile quantifyTargets # Unstranded RNA-Seq
+    snakemake --use-conda --configfile testData/config_stranded.json --snakefile align.Snakefile quantifyTargets # Stranded RNA-Seq
 
 ### Tasks
 
