@@ -1,4 +1,0 @@
-transcriptid	foldchange.1	foldchange.2	DEstatus.1	DEstatus.2
-YGR192C_mRNA gene=TDH3 CDS=1-999	1	4	FALSE	TRUE
-YJL052W_mRNA gene=TDH1 CDS=1-999	4	1	TRUE	FALSE
-YJR009C_mRNA gene=TDH2 CDS=1-999	1	4	FALSE	TRUE
