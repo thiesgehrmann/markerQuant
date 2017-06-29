@@ -11,6 +11,7 @@ object Test extends ActionObject {
     args(0) match {
       case "markergen" => this.markergen
       case "treetest"  => this.treetest
+      case "markerset" => this.markerset
       case opt         => { println("Unknown test") }
     }
   }
@@ -49,6 +50,27 @@ object Test extends ActionObject {
 
   }
 
+  def markerset = {
+
+    val reads = Array(Fastq.Entry("R1", BioSeq.DNASeq.fromString("gccccaatgttcgtcatgggtgttaacgaagaaaaatacacttctgacttgaagattgtctccaacgcttcttgtaccaccaaatgtttggctccattgg"), "".getBytes),
+                      Fastq.Entry("R2", BioSeq.DNASeq.fromString("cacctctccagtccttgtgggatggaccgtcaacagtcttttgggtggcggtcatggagtgaacagtggtcatcaaaccttcttcaataccgaaagcatc"), "".getBytes))
+    val markers = Array(Fasta.Entry("TDH1:444", BioSeq.DNASeq.fromString("gtcatcactgctccatcttcttctgctccaatgtttgttgttggtgttaaccacactaaatacactccagacaagaagattgtctccaacgcttcttgtaccac")),
+                        Fasta.Entry("TDH2:555", BioSeq.DNASeq.fromString("gttcactccatgaccgccacccaaaagactgttgacggtcc")))
+
+    val kmerCounts = Markers.kmerCounts(markers, 21)
+    val (targetKmers, gapKmers) =  Markers.getUniqueAggregatedKmersAndGaps(markers, Array(kmerCounts), 21, false)
+
+    targetKmers.flatten.foreach( k => println(">%d\n%s".format(k.index, k.seq.toString)))
+
+    val targetKmerFasta = targetKmers.zipWithIndex.map{ case (group, i) => group.map( kmer => Fasta.Entry("%s:%d".format(markers(i).description, kmer.index), kmer.seq))}.flatten
+    val gapKmerFasta = gapKmers.flatten.reduce(_ union _).map(_.toFastaEntry)
+    val quantifier = Quantification.Quantifier(targetKmerFasta, gapKmerFasta, 21, false, reads.length > 1)
+
+    reads.foreach( read => quantifier.search(Array(read)))
+
+    //reads.map(x => Markers.genKmers(x.sequence, 21)).flatten.toSet diff gapKmers.toSet
+
+  }
 
   def treetest = {
 

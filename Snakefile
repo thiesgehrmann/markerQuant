@@ -6,8 +6,20 @@ __PC_DIR__ = "%s/pipeline_components" % __INSTALL_DIR__
 __JAR__         = "%s/markerQuant/markerQuant.jar" % __INSTALL_DIR__
 __RUN_DIR__ = os.path.abspath(config["outdir"]) + "/run"
 
+###############################################################################
 
 __MARKER_OUTDIR__ = "%s/markers" % __RUN_DIR__
+__QUANT_OUTDIR__  = "%s/quantification" % __RUN_DIR__
+__DIFF_OUTDIR__   = "%s/diffex" % __RUN_DIR__
+
+###############################################################################
+
+rule all:
+  input:
+    quant = "%s/quantification.tsv" % __QUANT_OUTDIR__
+
+###############################################################################
+
 rule generateMarkers:
   input:
     targets = config["targets"],
@@ -17,14 +29,16 @@ rule generateMarkers:
     gaps    = "%s/gaps.fasta"    % __MARKER_OUTDIR__
   params:
     jar = __JAR__,
-    strandSpecific = "-s" if config["strandSpecific"] == 1 else ""
+    strandSpecific = "-s" if config["strandSpecific"] == 1 else "",
+    transcriptome = "-T %s" % config["transcriptome"] if ("transcriptome" in config) else ""
   shell: """
     outdir=`dirname {output.markers}`
     mkdir -p "$outdir"
-    java -jar {params.jar} markers -g {input.genomes} -t {input.targets} -o "$outdir/" {params.strandSpecific}
+    java -jar {params.jar} markers -g {input.genomes} -t {input.targets} -o "$outdir/" {params.strandSpecific} {params.transcriptome}
   """
 
-__QUANT_OUTDIR__ = "%s/quantification" % __RUN_DIR__
+###############################################################################
+
 rule quantifyMarkers:
   input:
     markers = rules.generateMarkers.output.markers,
@@ -34,12 +48,12 @@ rule quantifyMarkers:
     quant = "%s/marker_counts.{sample}.tsv" % __QUANT_OUTDIR__
   params:
     jar = __JAR__,
-     fastq = lambda wildcards: ','.join(config["samples"][wildcards.sample]["fastq"]),
+    fastq = lambda wildcards: ','.join(config["samples"][wildcards.sample]["fastq"]),
     strandSpecific = "-s" if config["strandSpecific"] == 1 else ""
   shell: """
     outdir=`dirname {output.quant}`
     mkdir -p "$outdir"
-    java -jar {params.jar} quant -m {input.markers} -g {input.gaps} -f {params.fastq} -o {output.quant} {params.strandSpecific}
+    echo java -jar {params.jar} quant -m {input.markers} -g {input.gaps} -f {params.fastq} -o {output.quant} {params.strandSpecific}
   """
 
 rule averageMarkers:
@@ -98,12 +112,12 @@ rule quantifyTargets:
       with open(output.quant, "w") as ofd:
         ofd.write("target\t%s\n" % '\t'.join(samples))
         for target in sorted(list(data[list(data.keys())[0]].keys())):
-          ofd.write("%s\t%d\n" % (target, '\t'.join([ int(data[sample][target][0]) for sample in samples])))
+          ofd.write("%s\t%s\n" % (target, '\t'.join([ str(int(float(data[sample][target][0]))) for sample in samples])))
         #efor
       #ewith
     #fi
 
-__DIFF_OUTDIR__ = "%s/diffex" % __RUN_DIR__
+###############################################################################
 
 rule deseqSampleInfoTable:
   output:
@@ -120,7 +134,7 @@ rule deseqSampleInfoTable:
 rule deseqTest:
   input:
     quant       = rules.quantifyTargets.output.quant,
-    sample_info = rules.deseq_sample_info_table.output.table
+    sample_info = rules.deseqSampleInfoTable.output.table
   output:
     diff = "%s/test.{test}.output.tsv" %__DIFF_OUTDIR__
   conda : "%s/pipeline_components/env.yaml"% __INSTALL_DIR__
@@ -144,7 +158,7 @@ rule deseqTests:
 rule deseqNorm:
   input:
     quant       = rules.quantifyTargets.output.quant,
-    sample_info = rules.deseq_sample_info_table.output.table
+    sample_info = rules.deseqSampleInfoTable.output.table
   output:
     norm = "%s/quantification.normalized.tsv" %__DIFF_OUTDIR__
   conda : "%s/pipeline_components/env.yaml"% __INSTALL_DIR__
@@ -158,5 +172,7 @@ rule deseq:
   input:
     tests = rules.deseqTests.output.tests,
     norm  = rules.deseqNorm.output.norm
+
+###############################################################################
 
 

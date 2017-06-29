@@ -26,22 +26,12 @@ object Quantify extends ActionObject {
     val outFile   = options("out")
     val counts    = new Utils.CountMap[String]
 
-    val tree = if (sSpecific) { Quantification.genTree(fastaKmer, fastaGaps, k) } else { Quantification.genTree(fastaKmer ++ fastaKmer.map(_.revcomp), fastaGaps ++ fastaGaps.map(_.revcomp), k) }
-    val trees = if (!sSpecific && fastq.length > 1) {
-        Array(tree, tree)
-      } else if (sSpecific && fastq.length > 1) {
-        Array(tree, Quantification.genTree(fastaKmer.map(_.revcomp), fastaGaps, k))
-      } else if (!sSpecific && fastq.length == 1) {
-        Array(tree)
-      } else {
-        Array(tree)
-      }
-    
+    val quantifier = Quantification.Quantifier(fastaKmer, fastaGaps, k, sSpecific, fastq.length > 1)    
 
     Utils.message("Counting markers")
     while(fastq.forall(_.hasNext)){
       val reads   = fastq.map(_.next).toArray
-      val markers = Quantification.findInTree(trees, reads).toSet
+      val markers = quantifier.search(reads)
       counts.add(markers)
     }
 
@@ -49,6 +39,8 @@ object Quantify extends ActionObject {
     fastaKmer.map(_.description).foreach{ id =>
       outfd.write("%s\t%d\n".format(id, counts(id)))
     }
+    outfd.write("multitarget\t%d\n".format(counts("multimapped")))
+    outfd.write("unmapped\t%d\n".format(counts("unmapped")))
     outfd.close()
 
   }

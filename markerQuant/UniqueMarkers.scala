@@ -27,6 +27,7 @@ object UniqueMarkers extends ActionObject {
       // Read input
     val inputFastas  = arguments("targets").split(',')
     val inputGenomes = arguments("genomes").split(',')
+    val inputTrans   = arguments("transcriptomes").split(',')
     val k            = arguments("k").toInt
     val outPrefix    = arguments("outprefix")
     val strSpecific  = if (arguments("strandSpecific") == "True") true else false
@@ -35,25 +36,30 @@ object UniqueMarkers extends ActionObject {
     val targets  = inputFastas.map(Fasta.read(_).toArray).flatten
       // Read genome FASTA files
     val genomes = inputGenomes.map(Fasta.read(_).toArray).flatten;
+      // Read the transcriptome FASTA files
+    val transcriptomes = inputTrans.filter(_.length > 0).map(Fasta.read(_).toArray).flatten
 
     Utils.message("Counting Kmers.")
     val kmerCountsGenomes = Markers.kmerCounts(genomes ++ genomes.map(_.revcomp), k)
-    val kmerCountsTargets = if(strSpecific) {
-      Markers.kmerCounts(targets, k)
-    } else {
-      Markers.kmerCounts(targets ++ targets.map(_.revcomp), k)
-    }
-    //kmerCountsGenomes.foreach{ case (k,v) => println("%s: %d, %d".format(k.seq, v, kmerCountsTargets.getOrElse(k,0)))}
+    val kmerCountsTrans   = if(strSpecific) {Markers.kmerCounts(transcriptomes, k)} else { Markers.kmerCounts(transcriptomes ++ transcriptomes.map(_.revcomp), k) }
+    val kmerCountsTargets = if(strSpecific) {Markers.kmerCounts(targets, k)} else {Markers.kmerCounts(targets ++ targets.map(_.revcomp), k) }
 
-    Utils.message("Filtering generated Kmers for the target sequences.")
-    val filteredKmers = targets.map(s => Markers.singleCountKmers(Markers.singleCountKmers(Markers.uniqueKmers(Markers.genKmers(s.sequence, k)), kmerCountsGenomes, strSpecific), kmerCountsTargets, strSpecific))
+    val kmerCounts = Array(kmerCountsTargets, kmerCountsGenomes, kmerCountsTrans).filter(_.size > 0)
+    kmerCounts.foreach(c => println("%d".format(c.size)))
+
+    val (targetKmers, gapKmers) = Markers.getUniqueAggregatedKmersAndGaps(targets, kmerCounts, k, strSpecific)
+
+    //Utils.message("Filtering generated Kmers for the target sequences.")
+    //val filteredKmers = targets.map( s => kmerCounts.foldLeft(Markers.genKmers(s.sequence, k): Iterable[Markers.Kmer]){ case (kmers, counts) => Markers.singleCountKmers(kmers, counts, strSpecific)})
+    //val filteredKmers = targets.map(s => Markers.singleCountKmers(Markers.singleCountKmers(Markers.uniqueKmers(Markers.genKmers(s.sequence, k)), kmerCountsGenomes, strSpecific), kmerCountsTargets, strSpecific))
     //filteredKmers.foreach(group => group.foreach{ k => println("%d: %s".format(k.index, k.seq.toString))})
 
-    Utils.message("Aggregating the Kmers.")
-    val targetKmers = filteredKmers.map(Markers.aggregateRedundant(_))
+    //Utils.message("Aggregating the Kmers.")
+    //val targetKmers = filteredKmers.map(Markers.aggregateRedundant(_))
 
-    Utils.message("Finding gaps in the aggregated kmers")
-    val gapKmers = targetKmers.map( group => group.map( kmer => Markers.aggregatedKmerGaps(kmer, k, kmerCountsGenomes, strSpecific).toSet union Markers.aggregatedKmerGaps(kmer, k, kmerCountsTargets, strSpecific).toSet))
+    //Utils.message("Finding gaps in the aggregated kmers")
+    //val gapKmers = targetKmers.map( group => group.map( kmer => kmerCounts.map( counts => Markers.aggregatedKmerGaps(kmer, k, counts, strSpecific).toSet).reduce(_ union _)))
+    //val gapKmers = targetKmers.map( group => group.map( kmer => Markers.aggregatedKmerGaps(kmer, k, kmerCountsGenomes, strSpecific).toSet union Markers.aggregatedKmerGaps(kmer, k, kmerCountsTargets, strSpecific).toSet))
 
     //println("Kmers to use:")
     val faKmers = targetKmers.zipWithIndex.map{ case (kmers, index) =>
@@ -81,7 +87,8 @@ object UniqueMarkers extends ActionObject {
 
   /////////////////////////////////////////////////////////////////////////////
 
-  val defaultArgs = Map("strandSpecific" -> "False",
+  val defaultArgs = Map("transcriptomes" -> "",
+                        "strandSpecific" -> "False",
                         "outprefix" -> "./",
                         "k" -> "21")
 
@@ -92,6 +99,9 @@ object UniqueMarkers extends ActionObject {
       args match {
         case "-t" :: value :: tail => {
           processArgsHelper(tail, options ++ Map("targets" -> value))
+        }
+        case "-T" :: value :: tail => {
+          processArgsHelper(tail, options ++ Map("transcriptomes" -> value))
         }
         case "-g" :: value :: tail => {
           processArgsHelper(tail, options ++ Map("genomes" -> value))
@@ -130,6 +140,7 @@ object UniqueMarkers extends ActionObject {
     println("Usage: markers <options>");
     println("  -t <fastaFile>: A fasta file containing the gene sequences you want to have markers for (multiple can be provided, separated by commas).")
     println("  -g <fastaFile>: A fasta file containing the genome sequences you want the markers to be unique for.")
+    println("  -T <fastaFile>: A fasta file containing the transcriptome sequences you want the markers to be unique for. [None]")
     println("  -k <fastaFile>: Size of kmer to use [21]")
     println("  -o <fastaFile>: Where to output the files [./]")
     println("  -s :            Generate strand specific markers.")

@@ -52,6 +52,14 @@ object Utils {
     def apply(key:T) = this.counts.getOrElse(key,0)
   }
 
+  object CountMap {
+    def apply[T](objects: Iterable[T]) = {
+      val cm = new CountMap[T]
+      cm.add(objects)
+      cm
+    }
+  }
+
 
 }
 

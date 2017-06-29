@@ -1,10 +1,13 @@
 #!/usr/bin/bash
 
 genes="tdh_genes.fasta"
-outdir="simulated_data"
+outdir="fastq"
 
-mkdir -p $outdir
-Rscript gen_expr_data.R $genes $outdir
+
+mkdir -p $outdir/unstranded
+mkdir -p $outdir/stranded
+Rscript gen_expr_data.R $genes $outdir/unstranded "false"
+Rscript gen_expr_data.R $genes $outdir/stranded "true"
 
 find $outdir \
  | grep -e '[.]fasta$' \

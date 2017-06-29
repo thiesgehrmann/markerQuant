@@ -19,6 +19,10 @@ object Markers {
     def revcomp = {
       new Kmer(this.seq.revcomp, this.index)
     }
+
+    def toFastaEntry = {
+      Fasta.Entry("%d".format(this.index), this.seq)
+    }
   }
 
 
@@ -61,14 +65,18 @@ object Markers {
   }
 
   def kmerCounts(seqs: Iterable[Fasta.Entry], k: Int): Map[Kmer,Int] = {
-    seqs.map{ s => 
-      genKmers(s.sequence, k).foldLeft(Map.empty[Kmer,Int]){ case (counts,kmer) =>
-        counts ++ Map(kmer -> (counts.getOrElse(kmer,0)+1))
-      }
-    }.reduce( Utils.sumDicts(_, _))
+    if (seqs.isEmpty) {
+      Map.empty[Kmer,Int]
+    } else {
+      seqs.map{ s => 
+        genKmers(s.sequence, k).foldLeft(Map.empty[Kmer,Int]){ case (counts,kmer) =>
+          counts ++ Map(kmer -> (counts.getOrElse(kmer,0)+1))
+        }
+      }.reduce( Utils.sumDicts(_, _))
+    }
   }
 
-  def singleCountKmers(kmers: Seq[Kmer], kmerCounts: Map[Kmer,Int], strandSpecific: Boolean) = {
+  def singleCountKmers(kmers: Iterable[Kmer], kmerCounts: Map[Kmer,Int], strandSpecific: Boolean) = {
     if (strandSpecific) {
       kmers.filter{ kmer =>
         //println("%d:%s -> %d".format(kmer.index, kmer.seq.toString, kmerCounts.getOrElse(kmer,1)))
@@ -80,9 +88,10 @@ object Markers {
     }
   }
 
-  def aggregateRedundant(kmers: Seq[Kmer]) = {
-    val k = if (kmers.length == 0) 21 else kmers(0).seq.length
-    kmers.sortBy(_.index).foldLeft(List.empty[Kmer]){ case (l, kmer) =>
+  def aggregateRedundant(kmers: Iterable[Kmer]) = {
+    val kmerArray = kmers.toArray
+    val k = if (kmerArray.length == 0) 21 else kmerArray(0).seq.length
+    kmerArray.sortBy(_.index).foldLeft(List.empty[Kmer]){ case (l, kmer) =>
       if (l.length == 0) {
         List(kmer)
       } else {
@@ -102,12 +111,23 @@ object Markers {
 
   def aggregatedKmerGaps(kmer: Kmer, k: Int, kmerCounts: Map[Kmer,Int], strandSpecific: Boolean) = {
     val aggStartIndex = kmer.index - kmer.seq.length + ((k-1)/2)+1
-    if (strandSpecific) {
-      genKmers(kmer.seq, k)
-    } else {
-      val kmers = genKmers(kmer.seq, k)
-      (kmers ++ kmers.map(_.revcomp))
-    }.filter(kmerCounts.getOrElse(_,1) > 1).map( e => new Kmer(e.seq, e.index + aggStartIndex))
+    genKmers(kmer.seq, k).filter(kmerCounts.getOrElse(_,1) > 1).map( e => new Kmer(e.seq, e.index + aggStartIndex))
+  }
+
+  def getUniqueAggregatedKmersAndGaps(targets: Iterable[Fasta.Entry], kmerCountsArg: Array[Map[Markers.Kmer,Int]], k: Int, strSpecific: Boolean) = {
+
+    val kmerCounts = kmerCountsArg.filter(_.size > 0)
+
+    val filteredKmers = targets.map( s => kmerCounts.foldLeft(Markers.genKmers(s.sequence, k): Iterable[Markers.Kmer]){ case (kmers, counts) => Markers.singleCountKmers(kmers, counts, strSpecific)})
+    
+    Utils.message("Aggregating the Kmers.")
+    val targetKmers = filteredKmers.map(Markers.aggregateRedundant(_))
+
+    Utils.message("Finding gaps in the aggregated kmers")
+    val gapKmers = targetKmers.map( group => group.map( kmer => kmerCounts.map( counts => Markers.aggregatedKmerGaps(kmer, k, counts, strSpecific).toSet).reduce(_ union _)))
+
+    (targetKmers, gapKmers)
+
   }
 
 }

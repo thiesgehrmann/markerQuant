@@ -11,6 +11,15 @@ object Fasta {
 
   case class Entry( description: String, sequence: BioSeq.DNASeq ) {
     def revcomp = new Entry(this.description, this.sequence.revcomp)
+    override def equals(o: Any) = o match{
+      case that: Fasta.Entry => this.sequence.equals(that.sequence)
+      case _ => false
+    }
+
+    override def hashCode = this.sequence.hashCode
+
+    override def toString = this.sequence.toString
+
   }
 
   /////////////////////////////////////////////////////////////////////////////
