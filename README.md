@@ -13,7 +13,13 @@ The example provided will run for approximately 3.4 minutes on a single core mac
 
     git clone https://github.com/thiesgehrmann/markerQuant.git
     cd markerQuant
-    snakemake --use-conda --configfile testData/config.json quantifyTargets
+
+    snakemake --use-conda --configfile testData/config.json quantifyTargets # Unstranded RNA-Seq
+    snakemake --use-conda --configfile testData/config_stranded.json quantifyTargets # Stranded RNA-Seq
+
+You can compare the results from a normal RNA-Seq pipeline (STAR + htseq_count)
+  snakemake --use-conda --configfile testData/config.json --snakefile align.Snakefile quantifyTargets
+  snakemake --use-conda --configfile testData/config_stranded.json --snakefile align.Snakefile quantifyTargets
 
 ### Tasks
 
