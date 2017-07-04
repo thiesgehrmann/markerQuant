@@ -10,10 +10,11 @@ conditionA   = args[3];
 conditionB   = args[4];
 output_table = args[5];
 
-deseq_input = "run/diffex/test.sample_1-sample_2.input.tsv"
-
 countData <- read.table(expr_input,header=TRUE,row.names=1, sep="\t")
+# Remove the additional stuff from the marker and alignment quantification stuff (multimapped, etc)
+countData <- countData[grep("^__", row.names(countData), invert=TRUE),]
 countData <- round(countData, 0)
+
 colData <- read.table(sample_info,header=TRUE,row.names=1, sep="\t")
 
 dds <- DESeqDataSetFromMatrix(countData = countData,colData = colData,design = ~ condition)

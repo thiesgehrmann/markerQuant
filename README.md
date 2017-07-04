@@ -27,7 +27,7 @@ There are several tasks that you can run
 
  * **generateMarkers**: Generate markers for the targets specified in the config file
  * **quantifyTargets**: Quantify the targets specified in the config file
- * **deseqTests**: Perform the differential expression tests specified in the config file.
+ * **deseqTests**: Perform the differential expression tests specified in the config file. (All DESeq stuff won't work for the example dataset)
  * **deseqNorm**: Normalize the expression based on the library size
  * **deseq**: Normalize and do the tests
 

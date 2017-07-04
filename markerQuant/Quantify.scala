@@ -39,8 +39,8 @@ object Quantify extends ActionObject {
     fastaKmer.map(_.description).foreach{ id =>
       outfd.write("%s\t%d\n".format(id, counts(id)))
     }
-    outfd.write("multitarget:0\t%d\n".format(counts("multitarget")))
-    outfd.write("unmapped:0\t%d\n".format(counts("unmapped")))
+    outfd.write("__multitarget:0\t%d\n".format(counts("multitarget")))
+    outfd.write("__unmapped:0\t%d\n".format(counts("unmapped")))
     outfd.close()
 
   }
