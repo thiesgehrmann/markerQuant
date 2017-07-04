@@ -1,6 +1,6 @@
 {
 
-  "outdir" : "/home/thiesgehrmann/projects/pascale_markers/markerQuant/testOutput/stranded",
+  "outdir" : "testOutput/stranded",
   "targets" : "testData/tdh_genes.fasta",
   "genomes" : "testData/genome.fasta",
   "transcriptome" : "testData/tdh_genes.fasta",

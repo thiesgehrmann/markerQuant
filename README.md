@@ -74,23 +74,24 @@ Each of these tasks generates a different set of output files
 
 Configuration is given in a json file, (example in `testData/config.json`).
 
-    {
-      "outdir" : "/home/thiesgehrmann/projects/markerQuant/testOutput/unstranded", # Give the output directory you want to use, should be absolute
-      "targets" : "testData/tdh_genes.fasta",                                      # A fasta file of the targets you wish to generate markers for
-      "genomes" : "testData/genome.fasta",                                         #   which are unique relative to this genome
-      "transcriptome" : "testData/tdh_genes.fasta",                                #   and this transcriptome (can be omitted if same as targets file)
-      "genes"   : "testData/tdh_genes.gff",                                        # Needed for the traditional pipeline in align.Snakefile
-      "strandSpecific" : 0,                                                        # 0 if not strand specific, 1 it yes
-      "targetMap": "",                                                             # If your transcript names are esoteric, you can map them to useful names with this file if necessary
-      # Provide here your fastq files, defining for each the sample identifier (e.g. sample_1_r1), a replicate group (e.g. sample_1), and a list of fastq files.
-      # Can be single or paired end, just provide an array with one element if single ended.
-      "samples" : { "sample_1_r1" : { "replicate_group" : "sample_1",  "fastq" : [ "testData/fastq/unstranded/sample_01_1.fastq", "testData/fastq/unstranded/sample_01_2.fastq" ]} ,
-                    "sample_1_r2" : { "replicate_group" : "sample_1",  "fastq" : [ "testData/fastq/unstranded/sample_02_1.fastq", "testData/fastq/unstranded/sample_02_2.fastq" ]} ,
-                    "sample_2_r1" : { "replicate_group" : "sample_2",  "fastq" : [ "testData/fastq/unstranded/sample_03_1.fastq", "testData/fastq/unstranded/sample_03_2.fastq" ]} ,
-                    "sample_2_r2" : { "replicate_group" : "sample_2",  "fastq" : [ "testData/fastq/unstranded/sample_04_1.fastq", "testData/fastq/unstranded/sample_04_2.fastq" ]} },
-      "tests" : [ ["sample_1", "sample_2"] ], # A list of differential expression tests to perform
-      "htseq_t" : "gene", # For HTSeq-count in align.Snakefile
-      "htseq_i" : "gene"  # For HTSeq-count in align.Snakefile
-    }
-
+```json
+{
+  "outdir" : "testOutput/unstranded",            # Give the output directory you want to use, should be absolute
+  "targets" : "testData/tdh_genes.fasta",        # A fasta file of the targets you wish to generate markers for
+  "genomes" : "testData/genome.fasta",           #   which are unique relative to this genome
+  "transcriptome" : "testData/tdh_genes.fasta",  #   and this transcriptome (can be omitted if same as targets file)
+  "genes"   : "testData/tdh_genes.gff",          # Needed for the traditional pipeline in align.Snakefile
+  "strandSpecific" : 0,                          # 0 if not strand specific, 1 it yes
+  "targetMap": "",                               # If your transcript names are esoteric, you can map them to useful names with this file if necessary
+  # Provide here your fastq files, defining for each the sample identifier (e.g. sample_1_r1), a replicate group (e.g. sample_1), and a list of fastq files.
+  # Can be single or paired end, just provide an array with one element if single ended.
+  "samples" : { "sample_1_r1" : { "replicate_group" : "sample_1",  "fastq" : [ "testData/fastq/unstranded/sample_01_1.fastq", "testData/fastq/unstranded/sample_01_2.fastq" ]} ,
+                "sample_1_r2" : { "replicate_group" : "sample_1",  "fastq" : [ "testData/fastq/unstranded/sample_02_1.fastq", "testData/fastq/unstranded/sample_02_2.fastq" ]} ,
+                "sample_2_r1" : { "replicate_group" : "sample_2",  "fastq" : [ "testData/fastq/unstranded/sample_03_1.fastq", "testData/fastq/unstranded/sample_03_2.fastq" ]} ,
+                "sample_2_r2" : { "replicate_group" : "sample_2",  "fastq" : [ "testData/fastq/unstranded/sample_04_1.fastq", "testData/fastq/unstranded/sample_04_2.fastq" ]} },
+  "tests" : [ ["sample_1", "sample_2"] ], # A list of differential expression tests to perform
+  "htseq_t" : "gene", # For HTSeq-count in align.Snakefile
+  "htseq_i" : "gene"  # For HTSeq-count in align.Snakefile
+}
+```
   
