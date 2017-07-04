@@ -4,10 +4,13 @@ Useful in deconvolving the expression of several highly homologous transcripts
 
 This pipeline is made up of three steps:
 1. Marker identification
+
    For each given target, identify markers that are unique to that target with respect to a) the other targets, b) the genome and c) the transcriptome (optionally).
 2. Marker quantification
+
    Using those markers, quantify the expression of each target in the dataset
 3. Differential expression
+
    Use DESeq2 to normalize the expression of the targets, and determine differentially expressed targets.
 
 ## Dependencies
