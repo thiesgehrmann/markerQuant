@@ -18,6 +18,9 @@ object BioSeq {
   }
 
   object DNASeq {
+
+    def apply(seq: String) = fromString(seq)
+
     def fromString(seq: String) = new DNASeq(seq.toLowerCase, seq.length)
   }
 

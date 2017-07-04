@@ -9,7 +9,7 @@ object Fastq {
 
   /////////////////////////////////////////////////////////////////////////////
 
-  class groupFastaLinesIterator(iter: BufferedIterator[String]) extends Iterator[Entry] {
+  class groupFastqLinesIterator(iter: BufferedIterator[String]) extends Iterator[Entry] {
     var nsequences = 0
     var nlines = 0
     def hasNext = iter.hasNext
@@ -46,6 +46,7 @@ object Fastq {
               }
               case 3 => {
                 this.nsequences += 1
+                if (this.nsequences % 5000 == 0) { Utils.message("Processed %d fastq sequences".format(this.nsequences)) }
                 Fastq.Entry(seqid, BioSeq.DNASeq.fromString(seq), quality.getBytes.map(x => (x - 33).toByte))
               }
             } 
@@ -59,8 +60,9 @@ object Fastq {
 
   /////////////////////////////////////////////////////////////////////////////
 
-  def read( fn: String ): groupFastaLinesIterator = {
-    new groupFastaLinesIterator(io.Source.fromFile(fn).getLines.buffered)
+  def read( fn: String ): groupFastqLinesIterator = {
+    Utils.message("Reading Fastq file '%s'".format(fn))
+    new groupFastqLinesIterator(io.Source.fromFile(fn).getLines.buffered)
   }
   
 

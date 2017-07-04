@@ -53,7 +53,7 @@ rule quantifyMarkers:
   shell: """
     outdir=`dirname {output.quant}`
     mkdir -p "$outdir"
-    echo java -jar {params.jar} quant -m {input.markers} -g {input.gaps} -f {params.fastq} -o {output.quant} {params.strandSpecific}
+    java -Xmx100G -jar {params.jar} quant -m {input.markers} -g {input.gaps} -f {params.fastq} -o {output.quant} {params.strandSpecific}
   """
 
 rule averageMarkers:
@@ -71,7 +71,7 @@ rule averageMarkers:
           continue
         #fi
         target   = ':'.join(row[0].split(':')[:-1])
-        location = int(row[0].split(':')[-1])
+        location = int(row[0].split(':')[-1]) if len(row[0].split(':')) > 1 else 0
         count    = int(row[1])
         if target not in rawQ:
           rawQ[target] = {}
@@ -85,7 +85,7 @@ rule averageMarkers:
       for target in sorted(rawQ.keys()):
         counts = rawQ[target].values()
         mean  = statistics.mean(counts)
-        stdev = statistics.stdev(counts)
+        stdev = statistics.stdev(counts) if len(counts) > 1 else 0
         nmarkers = len(counts)
         countString = ','.join([ str(rawQ[target][location]) for location in sorted(rawQ[target].keys())])
         ofd.write("%s\t%f\t%f\t%d\t%s\n" % (target, mean, stdev, nmarkers, countString))
@@ -119,6 +119,40 @@ rule quantifyTargets:
 
 ###############################################################################
 
+rule mapTargetNames:
+  input:
+    targetMap = config["targetMap"] if "targetMap" in config else "",
+    quant = rules.quantifyTargets.output.quant
+  output:
+    quant = "%s/quantification.map.tsv" % __QUANT_OUTDIR__
+  run:
+    import csv
+    mapN = {}
+    with open(input.targetMap, "r") as ifd:
+      reader = csv.reader(ifd, delimiter="\t")
+      for row in reader:
+        if len(row) < 2:
+          continue
+        #fi
+        mapN[row[0]] = row[1]
+      #efor
+    #ewith
+
+    with open(input.quant, "r") as ifd:
+      with open(output.quant, "w") as ofd:
+        reader = csv.reader(ifd, delimiter="\t")
+        for row in reader:
+          if row[0] in mapN:
+            ofd.write("%s\t%s\n" % (mapN[row[0]], "\t".join(row[1:])))
+          else:
+            ofd.write("%s\n" % '\t'.join(row))
+          #fi
+        #efor
+      #ewith
+    #ewith
+
+###############################################################################
+
 rule deseqSampleInfoTable:
   output:
     table = "%s/sample_info.tsv"% __DIFF_OUTDIR__
@@ -131,9 +165,17 @@ rule deseqSampleInfoTable:
       #efor
     #ewith
 
+def deseqTestQuantInput():
+  if "targetMap" in config:
+    return rules.mapTargetNames.output.quant
+  else:
+    return rules.quantifyTargets.output.quant
+  #fi
+#edef
+
 rule deseqTest:
   input:
-    quant       = rules.quantifyTargets.output.quant,
+    quant       = deseqTestQuantInput(),
     sample_info = rules.deseqSampleInfoTable.output.table
   output:
     diff = "%s/test.{test}.output.tsv" %__DIFF_OUTDIR__

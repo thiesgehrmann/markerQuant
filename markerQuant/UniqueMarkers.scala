@@ -72,11 +72,9 @@ object UniqueMarkers extends ActionObject {
 
     //println("Gap kmers to skip:")
     val faGaps = gapKmers.zipWithIndex.map{ case (kmers, index) =>
-      kmers.map{ kmerGaps =>
-        kmerGaps.map{ gap =>
-          Fasta.Entry("%s:%d".format(targets(index).description, gap.index), gap.seq)
-        }
-      }.flatten
+      kmers.map{ gap =>
+        Fasta.Entry("%s:%d".format(targets(index).description, gap.index), gap.seq)
+      }
     }.flatten
     Fasta.write(faGaps, "%s%s".format(outPrefix, "gaps.fasta"))
     //faGaps.foreach( g => println("%s: %s".format(g.description, g.sequence)))

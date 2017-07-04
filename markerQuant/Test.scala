@@ -12,6 +12,7 @@ object Test extends ActionObject {
       case "markergen" => this.markergen
       case "treetest"  => this.treetest
       case "markerset" => this.markerset
+      case "markerquant" => this.markerquantTest
       case opt         => { println("Unknown test") }
     }
   }
@@ -44,7 +45,7 @@ object Test extends ActionObject {
     println("\nAnd the aggregated markers")
     aggregated.foreach{k: Markers.Kmer => println("%d: %s".format(k.index, k.seq.toString)) }
 
-    val gaps = aggregated.map(Markers.aggregatedKmerGaps(_, 21, kmerCounts, false)).flatten
+    val gaps = aggregated.map(Markers.aggregatedKmerGaps(_, 21, Array(kmerCounts))).flatten
     println("\nAnd the gaps to skip!")
     gaps.foreach{k: Markers.Kmer => println("%d: %s".format(k.index, k.seq.toString)) }
 
@@ -63,13 +64,32 @@ object Test extends ActionObject {
     targetKmers.flatten.foreach( k => println(">%d\n%s".format(k.index, k.seq.toString)))
 
     val targetKmerFasta = targetKmers.zipWithIndex.map{ case (group, i) => group.map( kmer => Fasta.Entry("%s:%d".format(markers(i).description, kmer.index), kmer.seq))}.flatten
-    val gapKmerFasta = gapKmers.flatten.reduce(_ union _).map(_.toFastaEntry)
+    val gapKmerFasta = gapKmers.flatten.toSet.toArray.map(_.toFastaEntry)
     val quantifier = Quantification.Quantifier(targetKmerFasta, gapKmerFasta, 21, false, reads.length > 1)
 
     reads.foreach( read => quantifier.search(Array(read)))
 
     //reads.map(x => Markers.genKmers(x.sequence, 21)).flatten.toSet diff gapKmers.toSet
 
+  }
+
+  def markerquantTest = {
+
+    val genes = Array(Fasta.Entry(">YJL052W_mRNA gene=TDH1", BioSeq.DNASeq("ATGATCAGAATTGCTATTAACGGTTTCGGTAGAATCGGTAGATTGGTCTTGAGATTGGCTTTGCAAAGAAAAGACATTGAGGTTGTTGCTGTCAACGATCCATTTATCTCTAACGATTATGCTGCTTACATGGTCAAGTACGATTCTACTCATGGTAGATACAAGGGTACTGTTTCCCATGACGACAAGCACATCATCATTGATGGTGTCAAGATCGCTACCTACCAAGAAAGAGACCCAGCTAACTTGCCATGGGGTTCTCTAAAGATCGATGTCGCTGTTGACTCCACTGGTGTTTTCAAGGAATTGGACACCGCTCAAAAGCACATTGACGCTGGTGCCAAGAAGGTTGTCATCACTGCTCCATCTTCTTCTGCTCCAATGTTTGTTGTTGGTGTTAACCACACTAAATACACTCCAGACAAGAAGATTGTCTCCAACGCTTCTTGTACCACCAACTGTTTGGCTCCATTGGCCAAGGTTATCAACGATGCTTTCGGTATTGAAGAAGGTTTGATGACCACTGTTCACTCCATGACCGCCACTCAAAAGACTGTTGATGGTCCATCCCACAAGGACTGGAGAGGTGGTAGAACCGCTTCCGGTAACATTATCCCATCCTCTACCGGTGCTGCTAAGGCTGTCGGTAAGGTCTTGCCAGAATTGCAAGGTAAGTTGACCGGTATGGCTTTCAGAGTCCCAACCGTCGATGTTTCCGTTGTTGACTTGACTGTCAAGTTGGAAAAGGAAGCTACTTACGACCAAATCAAGAAGGCTGTTAAGGCTGCCGCTGAAGGTCCAATGAAGGGTGTTTTGGGTTACACCGAAGATGCCGTTGTCTCCTCTGATTTCTTGGGTGACACTCACGCTTCCATCTTCGATGCCTCCGCTGGTATCCAATTGTCTCCAAAGTTCGTCAAGTTGATTTCCTGGTACGATAACGAATACGGTTACTCCGCCAGAGTTGTTGACTTGATCGAATATGTTGCCAAGGCTTAA")),
+                      Fasta.Entry(">YJR009C_mRNA gene=TDH2", BioSeq.DNASeq("ATGGTTAGAGTTGCTATTAACGGTTTCGGTAGAATCGGTAGATTGGTTATGAGAATTGCTTTGCAAAGAAAGAACGTCGAAGTTGTTGCTTTGAACGATCCTTTCATCTCTAACGACTACTCCGCTTACATGTTCAAGTACGACTCTACTCACGGTAGATACGCTGGTGAAGTTTCCCACGATGACAAGCACATCATCGTTGATGGTCACAAGATCGCCACTTTCCAAGAAAGAGACCCAGCTAACTTGCCATGGGCTTCTCTAAACATTGACATCGCCATTGACTCCACTGGTGTTTTCAAGGAATTGGACACTGCTCAAAAGCACATTGACGCTGGTGCCAAGAAGGTTGTCATCACTGCTCCATCTTCCACCGCCCCAATGTTCGTCATGGGTGTTAACGAAGAAAAATACACTTCTGACTTGAAGATTGTTTCCAACGCTTCTTGTACCACCAACTGTTTGGCTCCATTGGCCAAGGTTATCAACGATGCTTTCGGTATTGAAGAAGGTTTGATGACCACTGTTCACTCCATGACCGCCACCCAAAAGACTGTTGACGGTCCATCCCACAAGGACTGGAGAGGTGGTAGAACCGCTTCCGGTAACATCATCCCATCCTCTACCGGTGCTGCTAAGGCTGTCGGTAAGGTCTTGCCAGAATTGCAAGGTAAGTTGACCGGTATGGCTTTCAGAGTCCCAACCGTCGATGTTTCCGTTGTTGACTTGACTGTCAAGTTGAACAAGGAAACCACCTACGATGAAATCAAGAAGGTTGTCAAGGCTGCCGCTGAAGGTAAGTTGAAGGGTGTCTTGGGTTACACTGAAGACGCTGTTGTCTCCTCTGACTTCTTGGGTGACTCTAACTCTTCCATCTTCGATGCTGCCGCTGGTATCCAATTGTCTCCAAAGTTCGTCAAGTTGGTTTCCTGGTACGACAACGAATACGGTTACTCTACCAGAGTTGTCGACTTGGTTGAACACGTTGCCAAGGCTTAA")))
+
+    val kmerCounts = Markers.kmerCounts(genes, 21)
+    val (markers, gaps) = Markers.getUniqueAggregatedKmersAndGaps(genes, Array(kmerCounts), 21, false)
+    
+    val quantifier = Quantification.Quantifier(markers.zipWithIndex.map{case (g, i) => g.map( k => Fasta.Entry("%s:%d".format(genes(i).description, k.index), k.seq))}.flatten, gaps.toArray.flatten.map(_.toFastaEntry), 21, false, false)
+
+    genes.foreach{ g =>
+      println("Checking kmers for %s".format(g.description))
+      Markers.genKmers(g.sequence, 21).foreach{ k =>
+        println("F-%4d: %s -> %s".format(k.index, k.seq.toString, quantifier.search(Array(k.toFastqEntry)).mkString(",")))
+        println("R-%4d: %s -> %s".format(k.index, k.seq.toString, quantifier.search(Array(k.revcomp.toFastqEntry)).mkString(",")))
+      }
+    }
   }
 
   def treetest = {

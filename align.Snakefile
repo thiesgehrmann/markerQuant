@@ -10,6 +10,7 @@ tconf = {
 
 __STAR_OUTDIR__ = "%s/star_align" % __RUN_DIR__
 __HTSEQ_OUTDIR__ = "%s/htseq_count" % __RUN_DIR__
+__DIFF_OUTDIR__ = "%s/deseq_outdir" % __RUN_DIR__
 
 ###############################################################################
 
@@ -91,12 +92,14 @@ rule htseq_count:
     count = "%s/count.{sample}.tsv" % __HTSEQ_OUTDIR__
   conda: "%s/align_env.yaml" % __PC_DIR__
   params:
-    stranded = "--stranded=yes" if config["stranded"] == 1 else "--stranded=no"
+    stranded = "--stranded=yes" if config["strandSpecific"] == 1 else "--stranded=no",
+    tparam = "-t %s"% config["htseq_t"] if "htseq_t" in config else "-t gene",
+    iparam = "-i %s"% config["htseq_i"] if "htseq_i" in config else "-i gene"
   shell: """
-    htseq-count {params.stranded} -f bam -r pos -t gene -i gene {input.bam} {input.gff} > {output.count}
+    htseq-count {params.stranded} {params.tparam} {params.iparam} -f bam -r pos {input.bam} {input.gff} > {output.count}
   """
 
-rule quantification:
+rule quantifyTargets:
   input:
     count = expand("%s/count.{sample}.tsv" % __HTSEQ_OUTDIR__, sample=config["samples"].keys())
   output:
@@ -119,3 +122,105 @@ rule quantification:
         #efor
       #ewith
     #fi
+
+###############################################################################
+
+rule mapTargetNames:
+  input:
+    targetMap = config["targetMap"] if "targetMap" in config else "",
+    quant = rules.quantifyTargets.output.quant
+  output:
+    quant = "%s/quantification.map.tsv" % __HTSEQ_OUTDIR__
+  run:
+    import csv
+    mapN = {}
+    with open(input.targetMap, "r") as ifd:
+      reader = csv.reader(ifd, delimiter="\t")
+      for row in reader:
+        if len(row) < 2:
+          continue
+        #fi
+        mapN[row[0]] = row[1]
+      #efor
+    #ewith
+
+    with open(input.quant, "r") as ifd:
+      with open(output.quant, "w") as ofd:
+        reader = csv.reader(ifd, delimiter="\t")
+        for row in reader:
+          if row[0] in mapN:
+            ofd.write("%s\t%s\n" % (mapN[row[0]], "\t".join(row[1:])))
+          else:
+            ofd.write("%s\n" % '\t'.join(row))
+          #fi
+        #efor
+      #ewith
+    #ewith
+
+###############################################################################
+
+rule deseqSampleInfoTable:
+  output:
+    table = "%s/sample_info.tsv"% __DIFF_OUTDIR__
+  run:
+    samples = sorted(list(config["samples"].keys()), key=lambda x: (config["samples"][x]["replicate_group"], x))
+    with open(output.table, "w") as ofd:
+      ofd.write("sample\tcondition\n")
+      for sample in samples:
+        ofd.write("%s\t%s\n" % (sample, config["samples"][sample]["replicate_group"]))
+      #efor
+    #ewith
+
+def deseqTestQuantInput():
+  if "targetMap" in config:
+    return rules.mapTargetNames.output.quant
+  else:
+    return rules.quantifyTargets.output.quant
+  #fi
+#edef
+
+rule deseqTest:
+  input:
+    quant       = deseqTestQuantInput(),
+    sample_info = rules.deseqSampleInfoTable.output.table
+  output:
+    diff = "%s/test.{test}.output.tsv" %__DIFF_OUTDIR__
+  conda : "%s/pipeline_components/env.yaml"% __INSTALL_DIR__
+  params:
+    sample1 = lambda wildcards: wildcards.test.split('-')[0],
+    sample2 = lambda wildcards: wildcards.test.split('-')[1],
+    deseq_wrapper = "%s/deseq_wrapper.R" % __PC_DIR__
+  shell: """
+    Rscript {params.deseq_wrapper} '{input.quant}' {input.sample_info} {params.sample1} {params.sample2} {output.diff}
+  """
+
+rule deseqTests:
+  input:
+    tests = expand("%s/test.{test}.output.tsv" % __DIFF_OUTDIR__, test=[ "%s-%s" % (a,b) for (a,b) in config["tests"] ])
+  output:
+    tests = "%s/tests.tsv"% __DIFF_OUTDIR__
+  shell: """
+    cat {input.deseqs} > {output.tests}
+  """
+
+rule deseqNorm:
+  input:
+    quant       = rules.quantifyTargets.output.quant,
+    sample_info = rules.deseqSampleInfoTable.output.table
+  output:
+    norm = "%s/quantification.normalized.tsv" %__DIFF_OUTDIR__
+  conda : "%s/pipeline_components/env.yaml"% __INSTALL_DIR__
+  params:
+    deseq_wrapper = "%s/deseq_norm.R" % __PC_DIR__
+  shell: """
+    Rscript {params.deseq_wrapper} '{input.quant}' {input.sample_info} {output.norm}
+  """
+
+rule deseq:
+  input:
+    tests = rules.deseqTests.output.tests,
+    norm  = rules.deseqNorm.output.norm
+
+###############################################################################
+
+

@@ -49,7 +49,8 @@ object Utils {
     }
 
     def get = this.counts
-    def apply(key:T) = this.counts.getOrElse(key,0)
+    def getOrElse(key: T, value: Int) = this.counts.getOrElse(key,value)
+    def apply(key: T) = this.counts.getOrElse(key,0)
   }
 
   object CountMap {
@@ -58,6 +59,8 @@ object Utils {
       cm.add(objects)
       cm
     }
+
+    def empty[T] = new CountMap[T]
   }
 
 

@@ -12,8 +12,16 @@ object Quantification {
     def searchTree(read: Fastq.Entry, treeID: Int) = {
       val results = this.trees(treeID).search(read.sequence.toString.getBytes).asInstanceOf[java.util.Iterator[SearchResult]].asScala.toArray.map(sr => sr.asInstanceOf[SearchResult].getOutputs.toArray.map(r => r.asInstanceOf[String])).flatten
 
-      val aggmarkers = results.map{ mid =>  mid.substring(0,mid.lastIndexOf(':')) }.toSet
-      val genes      = aggmarkers.map{ amid => amid.substring(0,amid.indexOf(':'))}.toSet
+      val aggmarkers = results.map{ mid =>
+        val idx = mid.lastIndexOf(':')
+        if (idx >= 0) {
+           mid.substring(0,idx)
+        } else { mid } }.toSet
+      val genes = aggmarkers.map{ amid =>
+        val idx = amid.lastIndexOf(':')
+        if (idx >= 0) {
+          amid.substring(0,amid.indexOf(':'))
+        } else { amid } }.toSet
 
       val kmerCounts = Utils.CountMap(results.map( this.markers(treeID)(_).seq.toString))
 
@@ -53,33 +61,37 @@ object Quantification {
   object Quantifier {
 
     def makeSingleTree(fastaKmers: Iterable[Fasta.Entry], fastaGaps: Iterable[Fasta.Entry], k: Int) = {
+      Utils.message("Making a tree")
 
       val gaps = fastaGaps.zipWithIndex.map{ case (f,i) => Markers.Kmer(f.sequence, i) }.toSet
 
       val tree = new AhoCorasick()
 
-      val markers = fastaKmers.map{f =>
+      val markers = fastaKmers.zipWithIndex.map{ case (f, fi) =>
+        Utils.message("  \rAdding kmers for sequence %d ".format(fi), ln=false)
         Markers.genKmers(f.sequence, k).zipWithIndex.filter{ case (s,i) =>
           //if (gaps.contains(s)) {
           //  Utils.message("Skipping %s becauase it is a gap!".format(s.seq.toString))
           //}
           !gaps.contains(s)
         }.map{ case (s,i) =>
-          //Utils.message("Adding '%s:%d -> %s' to tree".format(f.description, i, s.seq.toString))
+          tree.add(s.seq.toString.getBytes, "%s:%d".format(f.description, i))
+          
+//          Utils.message("Adding (%d) '%s:%d -> %s' to tree".format(fi, f.description, i, s.seq.toString))
           "%s:%d".format(f.description, i) -> s
         }
       }.flatten.toMap
 
-      markers.foreach{ case (k,v) =>
-        tree.add(v.seq.toString.getBytes, k)
-      }
+      Utils.message("\rInserted %d sequences into tree\n".format(markers.size))
 
       tree.prepare()
+
       (tree, markers)
 
     }
 
     def apply(fastaKmers: Iterable[Fasta.Entry], fastaGaps: Iterable[Fasta.Entry], k: Int, strandSpecific: Boolean, paired: Boolean) = {
+      Utils.message("Generating quantifier")
 
       def revcompHelper(sequences: Iterable[Fasta.Entry]) = { sequences.map( s => Fasta.Entry(s.description + ":RC", s.sequence.revcomp)) }
 
@@ -95,7 +107,10 @@ object Quantification {
           (Array(tree, tree), Array(marker, marker))
         }
 
-      new Quantification.Quantifier(trees, markers, k)
+      val q = new Quantification.Quantifier(trees, markers, k)
+      Utils.message("Added markers")
+
+      q
     }
 
   }

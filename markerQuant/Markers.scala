@@ -23,8 +23,10 @@ object Markers {
     def toFastaEntry = {
       Fasta.Entry("%d".format(this.index), this.seq)
     }
+    def toFastqEntry = {
+      Fastq.Entry("", this.seq, Array.empty[Byte])
+    }
   }
-
 
   def genKmers(seq: BioSeq.DNASeq, k: Int) = {
 
@@ -68,13 +70,15 @@ object Markers {
     if (seqs.isEmpty) {
       Map.empty[Kmer,Int]
     } else {
-      seqs.map{ s => 
+      seqs.zipWithIndex.map{ case (s,i) => 
         genKmers(s.sequence, k).foldLeft(Map.empty[Kmer,Int]){ case (counts,kmer) =>
           counts ++ Map(kmer -> (counts.getOrElse(kmer,0)+1))
         }
       }.reduce( Utils.sumDicts(_, _))
     }
   }
+
+  
 
   def singleCountKmers(kmers: Iterable[Kmer], kmerCounts: Map[Kmer,Int], strandSpecific: Boolean) = {
     if (strandSpecific) {
@@ -109,9 +113,9 @@ object Markers {
     }
   }
 
-  def aggregatedKmerGaps(kmer: Kmer, k: Int, kmerCounts: Map[Kmer,Int], strandSpecific: Boolean) = {
+  def aggregatedKmerGaps(kmer: Kmer, k: Int, kmerCounts: Array[Map[Kmer,Int]]) = {
     val aggStartIndex = kmer.index - kmer.seq.length + ((k-1)/2)+1
-    genKmers(kmer.seq, k).filter(kmerCounts.getOrElse(_,1) > 1).map( e => new Kmer(e.seq, e.index + aggStartIndex))
+    genKmers(kmer.seq, k).filter{ kmer => kmerCounts.map( kc => kc.getOrElse(kmer,1) > 1).foldLeft(false)(_ || _)}.map( e => new Kmer(e.seq, e.index + aggStartIndex)).toSet
   }
 
   def getUniqueAggregatedKmersAndGaps(targets: Iterable[Fasta.Entry], kmerCountsArg: Array[Map[Markers.Kmer,Int]], k: Int, strSpecific: Boolean) = {
@@ -124,7 +128,7 @@ object Markers {
     val targetKmers = filteredKmers.map(Markers.aggregateRedundant(_))
 
     Utils.message("Finding gaps in the aggregated kmers")
-    val gapKmers = targetKmers.map( group => group.map( kmer => kmerCounts.map( counts => Markers.aggregatedKmerGaps(kmer, k, counts, strSpecific).toSet).reduce(_ union _)))
+    val gapKmers = targetKmers.map( group => group.map( kmer => aggregatedKmerGaps(kmer, k, kmerCounts).toSet).reduce(_ union _))
 
     (targetKmers, gapKmers)
 
