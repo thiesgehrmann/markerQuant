@@ -11,4 +11,7 @@
                 "sample_2_r1" : { "replicate_group" : "sample_2",  "fastq" : [ "testData/fastq/stranded/sample_03_1.fastq", "testData/fastq/stranded/sample_03_2.fastq" ]} ,
                 "sample_2_r2" : { "replicate_group" : "sample_2",  "fastq" : [ "testData/fastq/stranded/sample_04_1.fastq", "testData/fastq/stranded/sample_04_2.fastq" ]} },
   "tests" : [ ["sample_1", "sample_2"] ]
+  "htseq_t" : "gene",
+  "htseq_i" : "gene"
+
 }

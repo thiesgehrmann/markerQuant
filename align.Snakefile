@@ -9,15 +9,15 @@ tconf = {
 }
 
 __STAR_OUTDIR__ = "%s/star_align" % __RUN_DIR__
-__HTSEQ_OUTDIR__ = "%s/htseq_count" % __RUN_DIR__
-__DIFF_OUTDIR__ = "%s/deseq_outdir" % __RUN_DIR__
+__QUANT_OUTDIR__ = "%s/quantification" % __RUN_DIR__
+__DIFF_OUTDIR__ = "%s/diffex" % __RUN_DIR__
 
 ###############################################################################
 
 rule all:
   input:
     aln = expand("%s/aln2.{sample}.Aligned.sortedByCoord.out.bam" % __STAR_OUTDIR__, sample=config["samples"].keys()),
-    count = expand("%s/count.{sample}.tsv" % __HTSEQ_OUTDIR__, sample=config["samples"].keys())
+    count = expand("%s/count.{sample}.tsv" % __QUANT_OUTDIR__, sample=config["samples"].keys())
 
 
 ###############################################################################
@@ -89,7 +89,7 @@ rule htseq_count:
     bam = lambda wildcards: "%s/aln2.%s.Aligned.sortedByCoord.out.bam" % (__STAR_OUTDIR__, wildcards.sample),
     gff = config["genes"]
   output:
-    count = "%s/count.{sample}.tsv" % __HTSEQ_OUTDIR__
+    count = "%s/count.{sample}.tsv" % __QUANT_OUTDIR__
   conda: "%s/align_env.yaml" % __PC_DIR__
   params:
     stranded = "--stranded=yes" if config["strandSpecific"] == 1 else "--stranded=no",
@@ -101,14 +101,14 @@ rule htseq_count:
 
 rule quantifyTargets:
   input:
-    count = expand("%s/count.{sample}.tsv" % __HTSEQ_OUTDIR__, sample=config["samples"].keys())
+    count = expand("%s/count.{sample}.tsv" % __QUANT_OUTDIR__, sample=config["samples"].keys())
   output:
-    quant = "%s/quantification.tsv" % __HTSEQ_OUTDIR__
+    quant = "%s/quantification.tsv" % __QUANT_OUTDIR__
   run:
     import csv
     data = {}
     for sample in config["samples"].keys():
-      with open("%s/count.%s.tsv" % (__HTSEQ_OUTDIR__, sample), "r") as ifd:
+      with open("%s/count.%s.tsv" % (__QUANT_OUTDIR__, sample), "r") as ifd:
         data[sample] = { target : counts for (target, counts) in csv.reader(ifd, delimiter="\t") }
       #ewith
     #efor
@@ -130,7 +130,7 @@ rule mapTargetNames:
     targetMap = config["targetMap"] if "targetMap" in config else "",
     quant = rules.quantifyTargets.output.quant
   output:
-    quant = "%s/quantification.map.tsv" % __HTSEQ_OUTDIR__
+    quant = "%s/quantification.map.tsv" % __QUANT_OUTDIR__
   run:
     import csv
     mapN = {}

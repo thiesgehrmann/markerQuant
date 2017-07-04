@@ -1,13 +1,29 @@
 # markerQuant
-Determine transcriptome expression based on unique markers
+Determine transcriptome expression based on unique markers.
+Useful in deconvolving the expression of several highly homologous transcripts
+
+This pipeline is made up of three steps:
+1. Marker identification
+   For each given target, identify markers that are unique to that target with respect to a) the other targets, b) the genome and c) the transcriptome (optionally).
+2. Marker quantification
+   Using those markers, quantify the expression of each target in the dataset
+3. Differential expression
+   Use DESeq2 to normalize the expression of the targets, and determine differentially expressed targets.
 
 ## Dependencies
 
-  * Java
-  * Snakemake
-  * Conda
+  * [Java](https://www.java.com)
+  * [Snakemake](http://snakemake.readthedocs.io)
+  * [Conda](https://conda.io/miniconda.html)
+    * With [Bioconda](https://bioconda.github.io/)
 
 ## Usage
+
+We provide two pipelines, written using [Snakemake](http://snakemake.readthedocs.io):
+ * *Snakefile*: The MarkerQuant pipeline
+ * *align.Snakefile*: A [STAR](https://github.com/alexdobin/STAR)/[HTSeq-count](http://www-huber.embl.de/HTSeq/doc/overview.html)/[DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html) rnaseq pipeline
+
+### Example case
 
 The example provided will run for approximately 3.4 minutes on a single core machine
 
@@ -17,7 +33,7 @@ The example provided will run for approximately 3.4 minutes on a single core mac
     snakemake --use-conda --configfile testData/config.json quantifyTargets # Unstranded RNA-Seq
     snakemake --use-conda --configfile testData/config_stranded.json quantifyTargets # Stranded RNA-Seq
 
-You can compare the results from a normal RNA-Seq pipeline (STAR + htseq_count + DESeq2)
+You can compare the results from a normal RNA-Seq pipeline
     snakemake --use-conda --configfile testData/config.json --snakefile align.Snakefile quantifyTargets # Unstranded RNA-Seq
     snakemake --use-conda --configfile testData/config_stranded.json --snakefile align.Snakefile quantifyTargets # Stranded RNA-Seq
 
@@ -52,4 +68,28 @@ Each of these tasks generates a different set of output files
 ### deseqNorm
 
 * *run/diffex/quantification.normalized.tsv*: Normalized transcript abundance
+
+## Configuration
+
+Configuration is given in a json file, (example in `testData/config.json`).
+
+    {
+      "outdir" : "/home/thiesgehrmann/projects/markerQuant/testOutput/unstranded", # Give the output directory you want to use, should be absolute
+      "targets" : "testData/tdh_genes.fasta",                                      # A fasta file of the targets you wish to generate markers for
+      "genomes" : "testData/genome.fasta",                                         #   which are unique relative to this genome
+      "transcriptome" : "testData/tdh_genes.fasta",                                #   and this transcriptome
+      "genes"   : "testData/tdh_genes.gff",                                        # Needed for the traditional pipeline in align.Snakefile
+      "strandSpecific" : 0,                                                        # 0 if not strand specific, 1 it yes
+      "targetMap": "",                                                             # If your transcript names are esoteric, you can map them to useful names with this file if necessary
+      # Provide here your fastq files, defining for each the sample identifier (e.g. sample_1_r1), a replicate group (e.g. sample_1), and a list of fastq files.
+      # Can be single or paired end, just provide an array with one element if single ended.
+      "samples" : { "sample_1_r1" : { "replicate_group" : "sample_1",  "fastq" : [ "testData/fastq/unstranded/sample_01_1.fastq", "testData/fastq/unstranded/sample_01_2.fastq" ]} ,
+                    "sample_1_r2" : { "replicate_group" : "sample_1",  "fastq" : [ "testData/fastq/unstranded/sample_02_1.fastq", "testData/fastq/unstranded/sample_02_2.fastq" ]} ,
+                    "sample_2_r1" : { "replicate_group" : "sample_2",  "fastq" : [ "testData/fastq/unstranded/sample_03_1.fastq", "testData/fastq/unstranded/sample_03_2.fastq" ]} ,
+                    "sample_2_r2" : { "replicate_group" : "sample_2",  "fastq" : [ "testData/fastq/unstranded/sample_04_1.fastq", "testData/fastq/unstranded/sample_04_2.fastq" ]} },
+      "tests" : [ ["sample_1", "sample_2"] ], # A list of differential expression tests to perform
+      "htseq_t" : "gene", # For HTSeq-count in align.Snakefile
+      "htseq_i" : "gene"  # For HTSeq-count in align.Snakefile
+    }
+
   
