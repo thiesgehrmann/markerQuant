@@ -74,7 +74,7 @@ Each of these tasks generates a different set of output files
 
 Configuration is given in a json file, (example in `testData/config.json`).
 
-```json
+```python
 {
   "outdir" : "testOutput/unstranded",            # Give the output directory you want to use, should be absolute
   "targets" : "testData/tdh_genes.fasta",        # A fasta file of the targets you wish to generate markers for
