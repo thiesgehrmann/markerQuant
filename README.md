@@ -77,7 +77,7 @@ Configuration is given in a json file, (example in `testData/config.json`).
       "outdir" : "/home/thiesgehrmann/projects/markerQuant/testOutput/unstranded", # Give the output directory you want to use, should be absolute
       "targets" : "testData/tdh_genes.fasta",                                      # A fasta file of the targets you wish to generate markers for
       "genomes" : "testData/genome.fasta",                                         #   which are unique relative to this genome
-      "transcriptome" : "testData/tdh_genes.fasta",                                #   and this transcriptome
+      "transcriptome" : "testData/tdh_genes.fasta",                                #   and this transcriptome (can be omitted if same as targets file)
       "genes"   : "testData/tdh_genes.gff",                                        # Needed for the traditional pipeline in align.Snakefile
       "strandSpecific" : 0,                                                        # 0 if not strand specific, 1 it yes
       "targetMap": "",                                                             # If your transcript names are esoteric, you can map them to useful names with this file if necessary
