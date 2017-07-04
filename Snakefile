@@ -194,7 +194,7 @@ rule deseqTests:
   output:
     tests = "%s/tests.tsv"% __DIFF_OUTDIR__
   shell: """
-    cat {input.deseqs} > {output.tests}
+    cat {input.tests} > {output.tests}
   """
 
 rule deseqNorm:
