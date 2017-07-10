@@ -13,6 +13,7 @@ object Test extends ActionObject {
       case "treetest"  => this.treetest
       case "markerset" => this.markerset
       case "markerquant" => this.markerquantTest
+      case "uniquemarkertest" => this.uniqueMarkerTest
       case opt         => { println("Unknown test") }
     }
   }
@@ -67,7 +68,7 @@ object Test extends ActionObject {
 
     val targetKmerFasta = targetKmers.zipWithIndex.map{ case (group, i) => group.map( kmer => Fasta.Entry("%s:%d".format(markers(i).description, kmer.index), kmer.seq))}.flatten
     val gapKmerFasta = gapKmers.flatten.toSet.toArray.map(_.toFastaEntry)
-    val quantifier = Quantification.Quantifier(targetKmerFasta, gapKmerFasta, 21, false, reads.length > 1, minQual)
+    val quantifier = Quantification.Quantifier(targetKmerFasta, gapKmerFasta, 21, false, reads.length > 1, minQual, Array.empty[String].toSet)
 
     reads.foreach( read => quantifier.search(Array(read)))
 
@@ -83,7 +84,7 @@ object Test extends ActionObject {
     val kmerCounts = Markers.kmerCounts(genes, 21)
     val (markers, gaps) = Markers.getUniqueAggregatedKmersAndGaps(genes, Array(kmerCounts), 21, false)
     
-    val quantifier = Quantification.Quantifier(markers.zipWithIndex.map{case (g, i) => g.map( k => Fasta.Entry("%s:%d".format(genes(i).description, k.index), k.seq))}.flatten, gaps.toArray.flatten.map(_.toFastaEntry), 21, false, false, minQual)
+    val quantifier = Quantification.Quantifier(markers.zipWithIndex.map{case (g, i) => g.map( k => Fasta.Entry("%s:%d".format(genes(i).description, k.index), k.seq))}.flatten, gaps.toArray.flatten.map(_.toFastaEntry), 21, false, false, minQual, Array.empty[String].toSet)
 
     genes.foreach{ g =>
       println("Checking kmers for %s".format(g.description))
@@ -104,6 +105,34 @@ object Test extends ActionObject {
 
     tree.search("AAAAAATTTTTT".getBytes).asInstanceOf[java.util.Iterator[SearchResult]].asScala.toArray.foreach( r => r.asInstanceOf[SearchResult].getOutputs.toArray.foreach{ rs => println(rs.asInstanceOf[String])})
 
+  }
+
+  def uniqueMarkerTest = {
+    val genes = Array(Fasta.Entry("ADH1", BioSeq.DNASeq("ATGTCTATCCCAGAAACTCAAAAAGGTGTTATCTTCTACGAATCCCACGGTAAGTTGGAATACAAAGATATTCCAGTTCCAAAGCCAAAGGCCAACGAATTGTTGATCAACGTTAAATACTCTGGTGTCTGTCACACTGACTTGCACGCTTGGCACGGTGACTGGCCATTGCCAGTTAAGCTACCATTAGTCGGTGGTCACGAAGGTGCCGGTGTCGTTGTCGGCATGGGTGAAAACGTTAAGGGCTGGAAGATCGGTGACTACGCCGGTATCAAATGGTTGAACGGTTCTTGTATGGCCTGTGAATACTGTGAATTGGGTAACGAATCCAACTGTCCTCACGCTGACTTGTCTGGTTACACCCATGACGGTTCTTTCCAACAATACGCTACTGCTGACGCGGTGCAAGCCGCTCGTATTCCCGAAGGGACCGACTTGGCCCAAGTCGCCCCCATCTTGTGTGCTGGTATCACCGTCTACAAGGCTTTGAAGTCTGCTAACTTGATGGCCGGTCACTGGGTTGCTATCTCCGGTGCTGCTGGTGGTCTAGGTTCTTTGGCTGTTCAATACGCCAAGGCTATGGGTTACAGAGTCTTGGGTATTGACGGTGGTGAAGGTAAGGAAGAATTATTCAGATCCATCGGTGGTGAAGTCTTCATTGACTTCACTAAGGAAAAGGACATTGTCGGTGCTGTTCTAAAGGCCACTGACGGTGGTGCTCACGGTGTCATCAACGTTTCCGTTTCCGAAGCCGCTATTGAAGCTTCTACCAGATACGTTAGAGCTAACGGTACCACCGTTTTGGTCGGTATGCCAGCTGGTGCCAAGTGTTGTTCTGATGTCTTCAACCAAGTCGTCAAGTCCATCTCTATTGTTGGTTCTTACGTCGGTAACAGAGCTGACACCAGAGAAGCTTTGGACTTCTTCGCCAGAGGTTTGGTCAAGTCTCCAATCAAGGTTGTCGGCTTGTCTACCTTGCCAGAAATTTACGAAAAGATGGAAAAGGGTCAAATCGTTGGTAGATACGTTGTTGACACTTCTAAATAA")),
+                      Fasta.Entry("ADH1_blocks", BioSeq.DNASeq("ATGTCTATCCCAGAAACTCAAAAAGGTGTTATCTTCTACGAATCCCACGGTAAGTTGGAATACAAAGATATTCCAGTTCCAAAGCCAAAGGCCAACGAATTGTTAATCAACGTTAAATACTCTGGTGTCTGTCACACTGACTTGCACGCTTGGCACGGTGACTGGCCATTACCAGTTAAGCTACCATTAGTCGGTGGTCACGAAGGTGCAGGTGTCGTTGTCGGCATGGGTGAAAACGTTAAGGGCTGGAAGATCGGTGACTACGCAGGTATCAAATGGTTGAACGGTTCTTGTATGGCCTGTGAATACTGTGAATTAGGTAACGAATCCAACTGTCCTCACGCTGACTTGTCTGGTTACACACATGACGGTTCTTTCCAACAATACGCTACTGCTGACGCGGTGCAAGCAGCTCGTATTCCCGAAGGGACCGACTTGGCCCAAGTCGCCCCCATCTTATGTGCTGGTATCACCGTCTACAAGGCTTTGAAGTCTGCTAACTTAATGGCCGGTCACTGGGTTGCTATCTCCGGTGCTGCTGGTGGTCTAGGTTCTTTAGCTGTTCAATACGCCAAGGCTATGGGTTACAGAGTCTTGGGTATTGACGGTGGTGAAGGTAAGGAAGAATTGTTCAGATCCATCGGTGGTGAAGTATTCATTGACTTCACTAAGGAAAAGGACATTGTCGGTGCTGTTCTAAAGGCAACTGACGGTGGTGCTCACGGTGTCATCAACGTTTCCGTTTCCGAAGCAGCTATTGAAGCTTCTACCAGATACGTTAGAGCTAACGGTACCACCGTTTTGGTAGGTATGCCAGCTGGTGCCAAGTGTTGTTCTGATGTCTTCAACCAAGTAGTCAAGTCCATCTCTATTGTTGGTTCTTACGTCGGTAACAGAGCTGACACAAGAGAAGCTTTGGACTTCTTCGCCAGAGGTTTGGTCAAGTCTCCAATCAAGGTTGTCGGATTGTCTACCTTGCCAGAAATTTACGAAAAGATGGAAAAGGGTCAAATCGTTGGTAGATACGTTGTTGACACATCTAAATAA")))
+
+    val (markers, gaps) = Markers.getUniqueAggregatedKmersAndGaps(genes, Array(Markers.kmerCounts(genes, 21)), 21, false)
+    val allgaps = gaps.flatten.toSet
+    val reads = markers.zipWithIndex.map{ case (mG,i) => mG.map(m => Markers.genKmers(m.seq, 21).filter(!allgaps.contains(_)).map( k => Fasta.Entry("%s:%d:%d".format(genes(i).description, m.index, k.index), k.seq).toFastqEntry)).flatten}.flatten
+
+    val quantifier = Quantification.Quantifier(markers.zipWithIndex.map{case (g, i) => g.map( k => Fasta.Entry("%s:%d".format(genes(i).description, k.index), k.seq))}.flatten, gaps.toArray.flatten.map(_.toFastaEntry), 21, false, false, minQual, Array.empty[String].toSet)
+
+    reads.foreach{ r =>
+      val res = quantifier.search(Array(r, r.revcomp))
+      if (res.map(_.split(':')(0)).toSet.size > 1) {
+        println("######\n>%s".format(r.description))
+        res.map(println)
+      }
+    }
+
+    genes.foreach{ f =>
+      val res = quantifier.search(Array(f.toFastqEntry, f.revcomp.toFastqEntry))
+      if (res.map(_.split(':')(0)).toSet.size > 1) {
+        println("######\n>%s".format(f.description))
+        res.map(println)
+      }
+
+    }
   }
 
 }

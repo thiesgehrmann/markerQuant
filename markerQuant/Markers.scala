@@ -24,7 +24,7 @@ object Markers {
       Fasta.Entry("%d".format(this.index), this.seq)
     }
     def toFastqEntry = {
-      Fastq.Entry("", this.seq, Array.empty[Byte])
+      this.toFastaEntry.toFastqEntry
     }
   }
 
@@ -128,7 +128,7 @@ object Markers {
     val targetKmers = filteredKmers.map(Markers.aggregateRedundant(_))
 
     Utils.message("Finding gaps in the aggregated kmers")
-    val gapKmers = targetKmers.map( group => group.map( kmer => aggregatedKmerGaps(kmer, k, kmerCounts).toSet).reduce(_ union _))
+    val gapKmers = targetKmers.map( group => group.map( kmer => aggregatedKmerGaps(kmer, k, kmerCounts).toSet).foldLeft(Set.empty[Kmer])(_ union _))
 
     (targetKmers, gapKmers)
 

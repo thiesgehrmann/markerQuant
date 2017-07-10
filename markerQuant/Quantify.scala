@@ -25,11 +25,13 @@ object Quantify extends ActionObject {
     val fastq         = options("fastq").split(',').map(Fastq.read)
     val markerOutFile = options("markerOut")
     val targetOutFile = options("targetOut")
+    val knockoutFile  = options("knockouts")
     val minQual       = options("minQual").toInt.toByte
     val mCounts       = Utils.CountMap[String]
     val tCounts       = Utils.CountMap[String]
 
-    val quantifier = Quantification.Quantifier(fastaKmer, fastaGaps, k, sSpecific, fastq.length > 1, minQual)
+    val knockouts  = if (knockoutFile != "") Utils.openRead(knockoutFile).getLines.toArray.toSet else Set.empty[String]
+    val quantifier = Quantification.Quantifier(fastaKmer, fastaGaps, k, sSpecific, fastq.length > 1, minQual, knockouts)
 
     Utils.message("Counting markers")
     while(fastq.forall(_.hasNext)){
@@ -69,6 +71,7 @@ object Quantify extends ActionObject {
                         "targetOut" -> "./target_quantification.tsv",
                         "markerOut" -> "./marker_quantification.tsv",
                         "minQual" -> "25",
+                        "knockouts" -> "",
                         "k" -> "21")
 
   def processArgs(args: List[String]) : Map[String,String] = {
@@ -94,6 +97,9 @@ object Quantify extends ActionObject {
         case "-k" :: value :: tail => {
           processArgsHelper(tail, options ++ Map("k" -> value))
         }
+        case "-K" :: value :: tail => {
+          processArgsHelper(tail, options ++ Map("knockouts" -> value))
+        } 
         case "-s" :: tail => {
           processArgsHelper(tail, options ++ Map("strandSpecific" -> "True"))
         }
@@ -122,6 +128,7 @@ object Quantify extends ActionObject {
     println("  -M <outFile>: Where to output counts for markers. [Default %s]".format(defaultArgs("markerOut")))
     println("  -T <outFile>: Where to output counts for targets. [Default %s]".format(defaultArgs("targetOut")))
     println("  -k <integer>: kmer size to use [Default %s]".format(defaultArgs("k")))
+    println("  -K <inFile>: File with list of targets that should be knocked out")
     println("  -s : Provided markers are strand-specific.")
     println("  -q <integer [0,42]>: Minimum quality the marker-mapped read region must have. [Default %s]".format(defaultArgs("minQual")))
     println("")

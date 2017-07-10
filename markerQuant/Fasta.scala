@@ -20,7 +20,7 @@ object Fasta {
 
     override def toString = this.sequence.toString
 
-    def toFastqEntry = { Fastq.Entry(this.description, this.sequence, Array.empty[Byte])}
+    def toFastqEntry = { Fastq.Entry(this.description, this.sequence, (0 to this.sequence.length).toArray.map( b => 21.toByte))}
 
   }
 

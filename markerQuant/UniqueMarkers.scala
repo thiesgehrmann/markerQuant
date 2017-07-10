@@ -46,7 +46,6 @@ object UniqueMarkers extends ActionObject {
     val kmerCountsTargets = if(strSpecific) {Markers.kmerCounts(targets, k)} else {Markers.kmerCounts(targets ++ targets.map(_.revcomp), k) }
 
     val kmerCounts = Array(kmerCountsTargets, kmerCountsGenomes, kmerCountsTrans).filter(_.size > 0)
-    kmerCounts.foreach(c => println("%d".format(c.size)))
 
     val (targetKmers, gapKmers) = Markers.getUniqueAggregatedKmersAndGaps(targets, kmerCounts, k, strSpecific)
 

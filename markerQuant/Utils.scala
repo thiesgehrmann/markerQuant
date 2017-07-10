@@ -1,12 +1,18 @@
 // Written by Thies Gehrmann thiesgehrmann@gmail.com 2015-2016
 
 import scala.Console
+import java.io._
+import scala.io.Source
+import java.io.{BufferedWriter, OutputStreamWriter, FileOutputStream}
 
 package markerQuant {
 
 ///////////////////////////////////////////////////////////////////////////////
 
 object Utils {
+
+  def openWrite(file: String) = if(file == "-") new BufferedWriter(new OutputStreamWriter(System.out, "utf-8")) else new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "utf-8"))
+  def openRead(file: String)  = if(file == "-"){ Source.stdin } else {  Source.fromFile(file) }
 
   def message(msg: String, messageType: String = "", ln: Boolean = true, or: Boolean = false) = { msg.split("\n").foreach(l => Console.err.print("%s%s%s".format(messageType, l, if (ln) "\n" else ""))) }
   def warning(msg: String, ln: Boolean =true) = message(msg, "WARNING: ", ln)

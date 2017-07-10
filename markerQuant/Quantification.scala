@@ -7,7 +7,7 @@ package markerQuant {
 
 object Quantification {
 
-  class Quantifier(val trees: Array[AhoCorasick], val markers: Array[Map[String,Markers.Kmer]], k: Int, minQual: Byte) {
+  class Quantifier(val trees: Array[AhoCorasick], val markers: Array[Map[String,Markers.Kmer]], k: Int, minQual: Byte, knockouts : Set[String]) {
 
     def searchTree(read: Fastq.Entry, treeID: Int) = {
       val results = this.trees(treeID).search(read.sequence.toString.getBytes).asInstanceOf[java.util.Iterator[SearchResult]].asScala.toArray.map{ sr =>
@@ -33,24 +33,23 @@ object Quantification {
           } else { mid }
         }.toSet
       }
-      val genes = aggmarkers.map{ amid =>
-        val idx = amid.lastIndexOf(':')
-        if (idx >= 0) {
-          amid.substring(0,amid.indexOf(':'))
-        } else { amid }
-      }.toSet
 
-      if (genes.size > 1){
-        Utils.message("MULTIMAPPED: \n%s\n%s\n".format(read.description, read.sequence.toString))
-        qualResults.foreach( m => Utils.message("MULTIMAPPED: %s -> %s".format(m, this.markers(treeID)(m))))
-        println("################")
-      }
+      //val genes = aggmarkers.map{ amid =>
+      //  val idx = amid.lastIndexOf(':')
+      //  if (idx >= 0) {
+      //    amid.substring(0,amid.indexOf(':'))
+      //  } else { amid }
+      //}.toSet
 
-      if ((genes.size == 1) && genes.contains("augustus_masked-CENPK113-7D_chr_10_polished-processed-gene-4.26-mRNA-1")){
-        Utils.message("Found TDH2: \n%s\n%s\n".format(read.description, read.sequence.toString))
-        qualResults.foreach( m => Utils.message("FOUND TDH2: %s -> %s".format(m, this.markers(treeID)(m))))
-        println("################")
-      }
+      //if (genes.size > 1){
+      //  Utils.message("MULTIMAPPED: \n%s\n%s\n".format(read.description, read.sequence.toString))
+      //  qualResults.foreach( m => Utils.message("MULTIMAPPED: %s -> %s".format(m, this.markers(treeID)(m))))
+      //  println("################")
+      //}
+
+      //if ((genes.size == 1) && (genes.intersect(this.knockouts).size > 0)){
+      //  Utils.message("#Found Knockout: \n%s\n%s\n".format(read.description, read.sequence.toString))
+      //}
 
       //val kmerCounts = Utils.CountMap(results.map( this.markers(treeID)(_).seq.toString))
 
@@ -75,8 +74,14 @@ object Quantification {
 
       val targets = markers.map(_.split(':')(0)).toSet
 
+      if ((targets.size == 1) && (targets.intersect(this.knockouts).size > 0)){
+        targets.foreach(t => Utils.message("#Found Knockout: \n%s\n".format(t)))
+        f.foreach(read => Utils.message(read.toFastqString))
+      }
+
+
       if (targets.size > 1){
-        //Utils.warning("ERROR! Read pair gave multiple targets!\n%s".format(f.map( r => "ID: %s\nNT: %s".format(r.description, r.sequence.toString)).mkString("\n")))
+        Utils.warning("ERROR! Read pair gave multiple targets!\n%s".format(f.map( r => "ID: %s\nNT: %s".format(r.description, r.sequence.toString)).mkString("\n")))
         Array(Quantifier.multiTargetRead)
       } else if (targets.size == 0) {
         Array(Quantifier.unmappedRead)
@@ -126,7 +131,7 @@ object Quantification {
 
     }
 
-    def apply(fastaKmers: Iterable[Fasta.Entry], fastaGaps: Iterable[Fasta.Entry], k: Int, strandSpecific: Boolean, paired: Boolean, minQual: Byte) = {
+    def apply(fastaKmers: Iterable[Fasta.Entry], fastaGaps: Iterable[Fasta.Entry], k: Int, strandSpecific: Boolean, paired: Boolean, minQual: Byte, knockouts: Set[String]) = {
       Utils.message("Generating quantifier")
 
       def revcompHelper(sequences: Iterable[Fasta.Entry]) = { sequences.map( s => Fasta.Entry(s.description + ":RC", s.sequence.revcomp)) }
@@ -143,7 +148,7 @@ object Quantification {
           (Array(tree, tree), Array(marker, marker))
         }
 
-      val q = new Quantification.Quantifier(trees, markers, k, minQual)
+      val q = new Quantification.Quantifier(trees, markers, k, minQual, knockouts)
       Utils.message("Added markers")
 
       q

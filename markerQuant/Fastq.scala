@@ -5,7 +5,14 @@ package markerQuant {
 object Fastq {
 
 
-  case class Entry( description: String, sequence: BioSeq.DNASeq, quality: Array[Byte] )
+  case class Entry( description: String, sequence: BioSeq.DNASeq, quality: Array[Byte] ) {
+    def toFastqString = {
+      "%s\n%s\n+\n%s\n".format(this.description, this.sequence.seq.toString, this.quality.map(b => (b + 33).toString).mkString(""))
+    }
+
+    def revcomp = { Entry(this.description, this.sequence.revcomp, quality.reverse) }
+
+  }
 
   /////////////////////////////////////////////////////////////////////////////
 

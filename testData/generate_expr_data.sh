@@ -1,19 +1,20 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
-genes="tdh_genes.fasta"
-outdir="fastq"
+SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+genes="$1"
+outdir="$2"
+stranded="$3"
+errorrate="$4"
 
-mkdir -p $outdir/unstranded
-mkdir -p $outdir/stranded
-Rscript gen_expr_data.R $genes $outdir/unstranded "false" 0.005
-Rscript gen_expr_data.R $genes $outdir/stranded "true" 0.005
-Rscript gen_expr_data.R $genes $outdir/errorfree "false" 0
+mkdir -p "$outdir"
+Rscript $SCRIPTDIR/gen_expr_data.R $genes $outdir $stranded $errorrate
 
 find $outdir \
  | grep -e '[.]fasta$' \
- | while read fn; do 
+ | while read fn; do
   newname=`echo $fn | sed -e 's/[.]fasta$/.fastq/'`
-  cat $fn | ./fasta2fastq.sh > $newname
+  cat $fn | $SCRIPTDIR/fasta2fastq.sh > $newname
   rm $fn
 done
+

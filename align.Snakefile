@@ -2,10 +2,16 @@ import inspect, os
 __INSTALL_DIR__ = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 __PC_DIR__ = "%s/pipeline_components" % __INSTALL_DIR__
 __JAR__         = "%s/markerQuant/markerQuant.jar" % __INSTALL_DIR__
-__RUN_DIR__ = os.path.abspath(dconfig["outdir"]) + "/align_run"
 
 ###############################################################################
 
+import json
+dconfig = json.load(open("%s/defaults.json"% __PC_DIR__, "r"))
+dconfig.update(config)
+
+###############################################################################
+
+__RUN_DIR__ = os.path.abspath(dconfig["outdir"]) + "/align_run"
 __STAR_OUTDIR__ = "%s/star_align" % __RUN_DIR__
 __QUANT_OUTDIR__ = "%s/quantification" % __RUN_DIR__
 __DIFF_OUTDIR__ = "%s/diffex" % __RUN_DIR__
