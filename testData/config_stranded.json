@@ -2,10 +2,11 @@
 
   "outdir" : "testOutput/stranded",
   "targets" : "testData/tdh_genes.fasta",
-  "genomes" : "testData/genome.fasta",
+  "genomes" : "testData/tdh_genes.fasta",
   "transcriptome" : "testData/tdh_genes.fasta",
   "genes"   : "testData/tdh_genes.gff",
   "strandSpecific" : 1,
+  "minQual" : "25",
   "samples" : { "sample_1_r1" : { "replicate_group" : "sample_1",  "fastq" : [ "testData/fastq/stranded/sample_01_1.fastq", "testData/fastq/stranded/sample_01_2.fastq" ]} ,
                 "sample_1_r2" : { "replicate_group" : "sample_1",  "fastq" : [ "testData/fastq/stranded/sample_02_1.fastq", "testData/fastq/stranded/sample_02_2.fastq" ]} ,
                 "sample_2_r1" : { "replicate_group" : "sample_2",  "fastq" : [ "testData/fastq/stranded/sample_03_1.fastq", "testData/fastq/stranded/sample_03_2.fastq" ]} ,

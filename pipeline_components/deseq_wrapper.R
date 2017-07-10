@@ -22,7 +22,7 @@ dds <- DESeq(dds)
 result_A_B <- results(dds, contrast=c("condition",conditionA, conditionB)) ## contrast specifies conditions to be tested
 result_A_B <- result_A_B[complete.cases(result_A_B),] ## to remove rows with NA
 
-write.table(result_A_B, output_table)
+write.table(result_A_B, output_table, sep="\t")
 
 
 

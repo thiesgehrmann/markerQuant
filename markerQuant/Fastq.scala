@@ -46,8 +46,8 @@ object Fastq {
               }
               case 3 => {
                 this.nsequences += 1
-                if (this.nsequences % 5000 == 0) { Utils.message("Processed %d fastq sequences".format(this.nsequences)) }
-                Fastq.Entry(seqid, BioSeq.DNASeq.fromString(seq), quality.getBytes.map(x => (x - 33).toByte))
+                if (this.nsequences % 5000 == 0) { Utils.message("\rProcessed %d fastq sequences".format(this.nsequences)) }
+                Fastq.Entry(seqid, BioSeq.DNASeq.fromString(seq), line.getBytes.map(x => (x - 33).toByte))
               }
             } 
           }

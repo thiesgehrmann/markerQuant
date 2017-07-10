@@ -60,6 +60,10 @@ object Utils {
       cm
     }
 
+    def apply[T] = {
+      new CountMap[T]
+    }
+
     def empty[T] = new CountMap[T]
   }
 

@@ -29,7 +29,8 @@ object UniqueMarkers extends ActionObject {
     val inputGenomes = arguments("genomes").split(',')
     val inputTrans   = arguments("transcriptomes").split(',')
     val k            = arguments("k").toInt
-    val outPrefix    = arguments("outprefix")
+    val markerOut    = arguments("markerOut")
+    val gapOut       = arguments("gapOut")
     val strSpecific  = if (arguments("strandSpecific") == "True") true else false
 
       // Read the target genes
@@ -66,7 +67,7 @@ object UniqueMarkers extends ActionObject {
       val targetDescription = targets(index).description
       kmers.map{ kmer => Fasta.Entry("%s:%d".format(targetDescription, kmer.index), kmer.seq) }
     }.flatten
-    Fasta.write(faKmers, "%s%s".format(outPrefix, "markers.fasta"))
+    Fasta.write(faKmers, markerOut)
 
     //targetKmers.flatten.map{k: Markers.Kmer => println("%d: %s".format(k.index, k.seq.toString)) }
 
@@ -76,7 +77,7 @@ object UniqueMarkers extends ActionObject {
         Fasta.Entry("%s:%d".format(targets(index).description, gap.index), gap.seq)
       }
     }.flatten
-    Fasta.write(faGaps, "%s%s".format(outPrefix, "gaps.fasta"))
+    Fasta.write(faGaps, gapOut)
     //faGaps.foreach( g => println("%s: %s".format(g.description, g.sequence)))
 
     System.exit(0);
@@ -87,7 +88,8 @@ object UniqueMarkers extends ActionObject {
 
   val defaultArgs = Map("transcriptomes" -> "",
                         "strandSpecific" -> "False",
-                        "outprefix" -> "./",
+                        "markerOut" -> "./markers.fasta",
+                        "gapOut" -> "./gaps.fasta",
                         "k" -> "21")
 
   def processArgs(args: List[String]) : Map[String,String] = {
@@ -114,8 +116,11 @@ object UniqueMarkers extends ActionObject {
         case "-s" :: tail => {
           processArgsHelper(tail, options ++ Map("strandSpecific" -> "True"))
         }
-        case "-o" :: value :: tail => {
-          processArgsHelper(tail, options ++ Map("outprefix" -> value))
+        case "-M" :: value :: tail => {
+          processArgsHelper(tail, options ++ Map("markerOut" -> value))
+        }
+        case "-G" :: value :: tail => {
+          processArgsHelper(tail, options ++ Map("gapOut" -> value))
         }
         case opt :: tail => {
           Utils.error("Unknown option '%s'.".format(opt))
@@ -139,10 +144,14 @@ object UniqueMarkers extends ActionObject {
     println("  -t <fastaFile>: A fasta file containing the gene sequences you want to have markers for (multiple can be provided, separated by commas).")
     println("  -g <fastaFile>: A fasta file containing the genome sequences you want the markers to be unique for.")
     println("  -T <fastaFile>: A fasta file containing the transcriptome sequences you want the markers to be unique for. [None]")
-    println("  -k <fastaFile>: Size of kmer to use [21]")
-    println("  -o <fastaFile>: Where to output the files [./]")
+    println("  -k <fastaFile>: Size of kmer to use (must be odd) [%s]".format(defaultArgs("k")))
+    println("  -M <outFile>: Where to output the markers [%s]".format(defaultArgs("markerOut")))
+    println("  -G <outFile>: Where to output the gaps [%s]".format(defaultArgs("gapOut")))
     println("  -s :            Generate strand specific markers.")
     println("")
+    println("Example usage: quant -t mytargets.fasta -g mygenome.fasta # Generates unique markers relative to the genome")
+    println("               quant -t mytargets.fasta -g mygenome.fasta -T mytranscriptome.fasta # Generates unique markers relative to genome,transcriptome")
+    println("               quant -t mytargets.fasta -g mygenome.fasta -M m.fasta -G g.fasta -s # Generates unique markers for strand specific RNA-Seq, but puts them in different files.")
 
   }
 

@@ -17,6 +17,8 @@ object Test extends ActionObject {
     }
   }
 
+  val minQual = 21.toByte
+
   def markergen = {
 
     val sequence = Fasta.Entry("test", BioSeq.DNASeq.fromString("AAAAAAAAAATGAAAAAAAAAAAAAAAAAAAAATAAAAAAAAAAAAAAAAAAAAAAT"))
@@ -65,7 +67,7 @@ object Test extends ActionObject {
 
     val targetKmerFasta = targetKmers.zipWithIndex.map{ case (group, i) => group.map( kmer => Fasta.Entry("%s:%d".format(markers(i).description, kmer.index), kmer.seq))}.flatten
     val gapKmerFasta = gapKmers.flatten.toSet.toArray.map(_.toFastaEntry)
-    val quantifier = Quantification.Quantifier(targetKmerFasta, gapKmerFasta, 21, false, reads.length > 1)
+    val quantifier = Quantification.Quantifier(targetKmerFasta, gapKmerFasta, 21, false, reads.length > 1, minQual)
 
     reads.foreach( read => quantifier.search(Array(read)))
 
@@ -81,7 +83,7 @@ object Test extends ActionObject {
     val kmerCounts = Markers.kmerCounts(genes, 21)
     val (markers, gaps) = Markers.getUniqueAggregatedKmersAndGaps(genes, Array(kmerCounts), 21, false)
     
-    val quantifier = Quantification.Quantifier(markers.zipWithIndex.map{case (g, i) => g.map( k => Fasta.Entry("%s:%d".format(genes(i).description, k.index), k.seq))}.flatten, gaps.toArray.flatten.map(_.toFastaEntry), 21, false, false)
+    val quantifier = Quantification.Quantifier(markers.zipWithIndex.map{case (g, i) => g.map( k => Fasta.Entry("%s:%d".format(genes(i).description, k.index), k.seq))}.flatten, gaps.toArray.flatten.map(_.toFastaEntry), 21, false, false, minQual)
 
     genes.foreach{ g =>
       println("Checking kmers for %s".format(g.description))

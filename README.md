@@ -45,8 +45,10 @@ You can compare the results from a normal RNA-Seq pipeline:
 
 There are several tasks that you can run
 
+ * **all** : Run the full pipeline
  * **generateMarkers**: Generate markers for the targets specified in the config file
  * **quantifyTargets**: Quantify the targets specified in the config file
+ * **MarkerStatisticsPerTarget**: Provide marker count statistics for each target in all samples.
  * **deseqTests**: Perform the differential expression tests specified in the config file. (All DESeq stuff won't work for the example dataset)
  * **deseqNorm**: Normalize the expression based on the library size
  * **deseq**: Normalize and do the tests
@@ -86,6 +88,7 @@ Configuration is given in a json file, (example in `testData/config.json`).
   "genes"   : "testData/tdh_genes.gff",          # Needed for the traditional pipeline in align.Snakefile
   "strandSpecific" : 0,                          # 0 if not strand specific, 1 it yes
   "targetMap": "",                               # If your transcript names are esoteric, you can map them to useful names with this file if necessary
+  "minQual" : 25,                                # The minimum PHRED33 quality score to use for read regions that hit a marker
   # Provide here your fastq files, defining for each the sample identifier (e.g. sample_1_r1), a replicate group (e.g. sample_1), and a list of fastq files.
   # Can be single or paired end, just provide an array with one element if single ended.
   "samples" : { "sample_1_r1" : { "replicate_group" : "sample_1",  "fastq" : [ "testData/fastq/unstranded/sample_01_1.fastq", "testData/fastq/unstranded/sample_01_2.fastq" ]} ,
