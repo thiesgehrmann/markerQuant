@@ -28,7 +28,7 @@ dconfig.update(config)
 rule all:
   input:
     quant = "%s/quantification.tsv" % __QUANT_OUTDIR__,
-    norm  = "%s/quantification.normalized.tsv" % __DIFF_OUTDIR__
+    norm  = "%s/quantification.normalized.tsv" % __DIFF_OUTDIR__,
     tests = "%s/tests.tsv" % __DIFF_OUTDIR__
 
 ###############################################################################
@@ -133,40 +133,6 @@ rule quantifyTargets:
         #efor
       #ewith
     #fi
-
-###############################################################################
-
-rule mapTargetNames:
-  input:
-    targetMap = dconfig["targetMap"] if "targetMap" in config else "",
-    quant = rules.quantifyTargets.output.quant
-  output:
-    quant = "%s/quantification.map.tsv" % __QUANT_OUTDIR__
-  run:
-    import csv
-    mapN = {}
-    with open(input.targetMap, "r") as ifd:
-      reader = csv.reader(ifd, delimiter="\t")
-      for row in reader:
-        if len(row) < 2:
-          continue
-        #fi
-        mapN[row[0]] = row[1]
-      #efor
-    #ewith
-
-    with open(input.quant, "r") as ifd:
-      with open(output.quant, "w") as ofd:
-        reader = csv.reader(ifd, delimiter="\t")
-        for row in reader:
-          if row[0] in mapN:
-            ofd.write("%s\t%s\n" % (mapN[row[0]], "\t".join(row[1:])))
-          else:
-            ofd.write("%s\n" % '\t'.join(row))
-          #fi
-        #efor
-      #ewith
-    #ewith
 
 ###############################################################################
 
