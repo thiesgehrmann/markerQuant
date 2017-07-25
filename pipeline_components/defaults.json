@@ -1,0 +1,16 @@
+{
+  "outdir" : "./outdir",
+  "strandSpecific" : 0,
+  "minQual" : "25",
+  "k" : 21,
+
+  "targetMap": "",
+  "knockouts": "",
+
+
+
+  "star_params" : "",
+  "htseq_t" : "mRNA",
+  "htseq_i" : "ID"
+}
+

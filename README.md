@@ -51,8 +51,6 @@ There are several tasks that you can run
  * **generateMarkers**: Generate markers for the targets specified in the config file
  * **quantifyTargets**: Quantify the targets specified in the config file
  * **MarkerStatisticsPerTarget**: Provide marker count statistics for each target in all samples.
- * **deseqTests**: Perform the differential expression tests specified in the config file. (All DESeq stuff won't work for the example dataset)
- * **deseqNorm**: Normalize the expression based on the library size
  * **deseq**: Normalize and do the tests
 
 ## Output files
@@ -69,13 +67,11 @@ Each of these tasks generates a different set of output files
  * *run/quantification/target_counts.`sample`.tsv*: A table describing, in sample `sample`, the number of markers per gene, the number of counts per marker, and the average and standard deviation of these.
  * *run/quantification/quantification.tsv`*: Essentially the table of expression counts that need to go into DESeq. Rows are genes, columns are samples.
 
-### deseqTests
+### deseq
 
 * *run/diffex/tests.tsv*: A table of differential expression tests
-
-### deseqNorm
-
 * *run/diffex/quantification.normalized.tsv*: Normalized transcript abundance
+
 
 ## Configuration
 

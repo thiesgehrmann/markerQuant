@@ -160,92 +160,13 @@ rule quantifyTargets:
 
 ###############################################################################
 
-rule deseqSampleInfoTable:
-  output:
-    table = "%s/sample_info.tsv"% __DIFF_OUTDIR__
-  run:
-    samples = sorted(list(dconfig["samples"].keys()), key=lambda x: (dconfig["samples"][x]["replicate_group"], x))
-    with open(output.table, "w") as ofd:
-      ofd.write("sample\tcondition\n")
-      for sample in samples:
-        ofd.write("%s\t%s\n" % (sample, dconfig["samples"][sample]["replicate_group"]))
-      #efor
-    #ewith
-
-rule deseqTest:
-  input:
-    quant       = rules.quantifyTargets.output.quant,
-    sample_info = rules.deseqSampleInfoTable.output.table
-  output:
-    diff = "%s/test.{test}.output.tsv" %__DIFF_OUTDIR__
-  conda : "%s/pipeline_components/env.yaml"% __INSTALL_DIR__
-  params:
-    sample1 = lambda wildcards: wildcards.test.split('-')[0],
-    sample2 = lambda wildcards: wildcards.test.split('-')[1],
-    deseq_wrapper = "%s/deseq_wrapper.R" % __PC_DIR__
-  shell: """
-    Rscript {params.deseq_wrapper} '{input.quant}' {input.sample_info} {params.sample1} {params.sample2} {output.diff}
-  """
-
-rule deseqTests:
-  input:
-    tests = expand("%s/test.{test}.output.tsv" % __DIFF_OUTDIR__, test=[ "%s-%s" % (a,b) for (a,b) in dconfig["tests"] ])
-  output:
-    tests = "%s/tests.tsv"% __DIFF_OUTDIR__
-  shell: """
-    cat {input.tests} > {output.tests}
-  """
-
-rule deseqNorm:
-  input:
-    quant       = rules.quantifyTargets.output.quant,
-    sample_info = rules.deseqSampleInfoTable.output.table
-  output:
-    norm = "%s/quantification.normalized.tsv" %__DIFF_OUTDIR__
-  conda : "%s/pipeline_components/env.yaml"% __INSTALL_DIR__
-  params:
-    deseq_wrapper = "%s/deseq_norm.R" % __PC_DIR__
-  shell: """
-    Rscript {params.deseq_wrapper} '{input.quant}' {input.sample_info} {output.norm}
-  """
-
-
-rule mapTargetNames:
-  input:
-    targetMap = dconfig["targetMap"],
-    quant = rules.deseqNorm.output.norm
-  output:
-    quant = "%s/quantification.normalized.map.tsv" % __DIFF_OUTDIR__
-  run:
-    import csv
-    mapN = {}
-    with open(input.targetMap, "r") as ifd:
-      reader = csv.reader(ifd, delimiter="\t")
-      for row in reader:
-        if len(row) < 2:
-          continue
-        #fi
-        mapN[row[0]] = row[1]
-      #efor
-    #ewith
-
-    with open(input.quant, "r") as ifd:
-      with open(output.quant, "w") as ofd:
-        reader = csv.reader(ifd, delimiter="\t")
-        for row in reader:
-          if row[0] in mapN:
-            ofd.write("%s\t%s\n" % (mapN[row[0]], "\t".join(row[1:])))
-          else:
-            ofd.write("%s\n" % '\t'.join(row))
-          #fi
-        #efor
-      #ewith
-    #ewith
+include: "%s/deseq.Snakefile" % __PC_DIR__
 
 rule deseq:
   input:
     tests = rules.deseqTests.output.tests,
-    norm  = rules.deseqNorm.output.norm
+    norm  = rules.deseqNorm.output.norm,
+    map   = rules.deSeqMapTargetNames.output
 
 ###############################################################################
 
