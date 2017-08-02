@@ -15,7 +15,6 @@ This pipeline is made up of three steps:
 
 ## Dependencies
 
-  * [Java](https://www.java.com)
   * [Snakemake](http://snakemake.readthedocs.io)
   * [Conda](https://conda.io/miniconda.html)
     * With [Bioconda](https://bioconda.github.io/)
