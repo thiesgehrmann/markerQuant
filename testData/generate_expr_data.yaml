@@ -1,0 +1,5 @@
+channels:
+ - bioconda
+ - thiesgehrmann
+dependencies:
+ - bioconductor-polyester

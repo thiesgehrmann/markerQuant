@@ -41,6 +41,7 @@ rule generateMarkers:
     strandSpecific = "-s" if dconfig["strandSpecific"] == 1 else "",
     transcriptome = "-T %s" % dconfig["transcriptome"] if ("transcriptome" in config) else "",
     k = dconfig["k"]
+  conda: "%s/env.yaml" % __PC_DIR__
   shell: """
     java -jar {params.jar} markers -g {input.genomes} -t {input.targets} -k {params.k} {params.strandSpecific} {params.transcriptome} -M {output.markers} -G {output.gaps}
   """
@@ -63,6 +64,7 @@ rule quantifyMarkers:
     minQual = dconfig["minQual"],
     k = dconfig["k"],
     knockouts = "-K %s" % dconfig["knockouts"] if dconfig["knockouts"] != "" else ""
+  conda: "%s/env.yaml" % __PC_DIR__
   shell: """
     java -Xmx100G -jar {params.jar} quant -m {input.markers} -g {input.gaps} -f {params.fastq} -k {params.k} -M {output.markerQuant} -T {output.targetQuant} {params.knockouts} {params.strandSpecific} -q {params.minQual} 2>&1 | tee {output.logfile}
   """

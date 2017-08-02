@@ -8,7 +8,7 @@
   "knockouts": "",
 
 
-
+  "star_index_params": "",
   "star_params" : "",
   "htseq_t" : "mRNA",
   "htseq_i" : "ID"

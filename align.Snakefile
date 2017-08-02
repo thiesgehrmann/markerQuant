@@ -39,9 +39,11 @@ rule star_index:
   output:
     index = "%s/star.idx" % __STAR_OUTDIR__
   conda: "%s/align_env.yaml" % __PC_DIR__
+  params:
+    star_index_params = dconfig['star_index_params']
   shell: """
     mkdir {output.index}
-    STAR --runMode genomeGenerate --genomeDir {output.index} --genomeFastaFiles {input.genomes}
+    STAR --runMode genomeGenerate {params.star_index_params} --genomeDir {output.index} --genomeFastaFiles {input.genomes}
   """
 
 rule star_pass_one_sample:
