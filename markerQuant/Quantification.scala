@@ -75,8 +75,7 @@ object Quantification {
       val targets = markers.map(_.split(':')(0)).toSet
 
       if ((targets.size == 1) && (targets.intersect(this.knockouts).size > 0)){
-        targets.foreach(t => Utils.message("#Found Knockout: \n%s\n".format(t)))
-        f.foreach(read => Utils.message(read.toFastqString))
+        f.foreach(read => Utils.message("#Found Knockout: %s\n%s\n".format(targets.mkString(","), read.toFastqString)))
       }
 
 

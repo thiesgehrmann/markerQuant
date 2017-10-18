@@ -32,24 +32,22 @@ The example provided will run for approximately 3.4 minutes on a single core mac
     git clone https://github.com/thiesgehrmann/markerQuant.git
     cd markerQuant
 
-    snakemake --use-conda --configfile testData/config.json quantifyTargets # Unstranded RNA-Seq
-    snakemake --use-conda --configfile testData/config_stranded.json quantifyTargets # Stranded RNA-Seq
-    snakemake --use-conda --configfile testData/config_errorfree.json quantifyTargets # Unstranded, error-free RNA-Seq
+    ./mq -a quantifyTargets testData/config.json            # Unstranded RNA-Seq
+    ./mq -a quantifyTargets testData/config_stranded.json   # Stranded RNA-Seq
+    ./mq -a quantifyTargets estData/config_errorfree.json  # Unstranded, error-free RNA-Seq
 
 
 You can compare the results from a normal RNA-Seq pipeline:
 
-    snakemake --use-conda --configfile testData/config.json --snakefile align.Snakefile quantifyTargets # Unstranded RNA-Seq
-    snakemake --use-conda --configfile testData/config_stranded.json --snakefile align.Snakefile quantifyTargets # Stranded RNA-Seq
+    ./mq -A -a quantifyTargets testData/config.json          # Unstranded RNA-Seq
+    ./mq -A -a quantifyTargets testData/config_stranded.json # Stranded RNA-Seq
 
-### Tasks
+### Actions
 
-There are several tasks that you can run
+With the `-a` option, you can specify different actions:
 
- * **all** : Run the full pipeline
  * **generateMarkers**: Generate markers for the targets specified in the config file
  * **quantifyTargets**: Quantify the targets specified in the config file
- * **MarkerStatisticsPerTarget**: Provide marker count statistics for each target in all samples.
  * **deseq**: Normalize and do the tests
 
 ## Output files
@@ -64,7 +62,7 @@ Each of these tasks generates a different set of output files
 ### quantifyTargets
 
  * *run/quantification/target_counts.`sample`.tsv*: A table describing, in sample `sample`, the number of markers per gene, the number of counts per marker, and the average and standard deviation of these.
- * *run/quantification/quantification.tsv`*: Essentially the table of expression counts that need to go into DESeq. Rows are genes, columns are samples.
+ * *run/quantification/quantification.tsv*: Essentially the table of expression counts that need to go into DESeq. Rows are genes, columns are samples.
 
 ### deseq
 

@@ -56,7 +56,8 @@ rule quantifyMarkers:
   output:
     markerQuant = "%s/marker_counts.{sample}.tsv" % __QUANT_OUTDIR__,
     targetQuant = "%s/target_counts.{sample}.tsv" % __QUANT_OUTDIR__,
-    logfile     = "%s/quantification.{sample}.log"% __QUANT_OUTDIR__
+    logfile     = "%s/quantification.{sample}.log"% __QUANT_OUTDIR__,
+    kohits      = "%s/ko_hits.{sample}.fastq"% __QUANT_OUTDIR__
   params:
     jar = __JAR__,
     fastq = lambda wildcards: ','.join(dconfig["samples"][wildcards.sample]["fastq"]),
@@ -66,8 +67,19 @@ rule quantifyMarkers:
     knockouts = "-K %s" % dconfig["knockouts"] if dconfig["knockouts"] != "" else ""
   conda: "%s/env.yaml" % __PC_DIR__
   shell: """
-    java -Xmx100G -jar {params.jar} quant -m {input.markers} -g {input.gaps} -f {params.fastq} -k {params.k} -M {output.markerQuant} -T {output.targetQuant} {params.knockouts} {params.strandSpecific} -q {params.minQual} 2>&1 | tee {output.logfile}
+    java -Xmx100G -jar {params.jar} quant -m {input.markers} -g {input.gaps} -f {params.fastq} -k {params.k} -M {output.markerQuant} -T {output.targetQuant} {params.knockouts} {params.strandSpecific} -q {params.minQual} 2>&1 \
+     | tee {output.logfile} \
+     | grep "^#Found Knockout:" -A 4 \
+     > "{output.kohits}"
   """
+
+rule quantifyAllMarkers:
+  input:
+    markerQuants = expand("%s/marker_counts.{sample}.tsv" % __QUANT_OUTDIR__, sample=dconfig["samples"].keys()),
+    targetQuants = expand("%s/target_counts.{sample}.tsv" % __QUANT_OUTDIR__, sample=dconfig["samples"].keys()),
+    logfiles     = expand("%s/quantification.{sample}.log"% __QUANT_OUTDIR__, sample=dconfig["samples"].keys()),
+    kohits       = expand("%s/ko_hits.{sample}.fastq"% __QUANT_OUTDIR__, sample=dconfig["samples"].keys())
+
 
 rule MarkerStatisticsPerTargetPerSample:
   input:

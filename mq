@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+
+SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+action="deseq"
+sm_params=""
+validate=0
+sm_file="$SCRIPTDIR/Snakefile"
+type="mq"
+
+###############################################################################
+
+function usage() {
+
+  echo "mq(markerQuant): Identify and Quantify discriminative markers (https://github.com/thiesgehrmann/markerQuant)"
+  echo ""
+  echo " mq [options] <configFile.json>"
+  echo ""
+  echo "Options:"
+  echo " -a <action>: Action to perform (generateMarkers|quantifyTargets|deseq). Default " $action
+  echo " -s <str>: Additional arguments to snakemake"
+  echo " -A: Use alignment pipeline instead"
+  echo " -v: Only validate input, don't run pipeline"
+  echo " -h: Print this help screen"
+  echo ""
+}
+
+###############################################################################
+
+while getopts ":a:s:Avh" opt; do
+  case $opt in
+    s)
+      sm_params="$OPTARG"
+      ;;
+    a)
+      action="$OPTARG"
+      ;;
+    A)
+      sm_file="$SCRIPTDIR/align.Snakefile"
+      type="align"
+      ;;
+    v)
+      validate=1
+      ;;
+    h)
+      usage
+      exit 0
+      ;;
+    \?)
+      echo "Invalid option: $OPTARG" >&2
+      usage
+      exit 1
+      ;;
+    :)
+      echo "Missing argument for option $OPTARG"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+for i in `seq $((OPTIND-1))`; do
+  shift
+done
+configfile=$1
+
+if [ ! -e "$configfile" ]; then
+  echo "Error: configFile missing"
+  usage
+  exit 1
+fi
+
+$SCRIPTDIR/pipeline_components/checkInput.py "$configfile" "$action"
+checkres=$?
+if [ ! $checkres -eq 0 ]; then
+  exit $checkres
+fi
+
+
+###############################################################################
+
+if [ $validate -eq 0 ]; then
+  snakemake --snakefile "$sm_file" --use-conda --configfile "$configfile" --conda-prefix "$SCRIPTDIR/.snakemake/conda" $sm_params $action
+fi
