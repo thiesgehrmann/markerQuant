@@ -7,6 +7,7 @@ sm_params=""
 validate=0
 sm_file="$SCRIPTDIR/Snakefile"
 type="mq"
+threads=1
 
 ###############################################################################
 
@@ -17,8 +18,9 @@ function usage() {
   echo " mq [options] <configFile.json>"
   echo ""
   echo "Options:"
-  echo " -a <action>: Action to perform (generateMarkers|quantifyTargets|deseq). Default " $action
+  echo " -a <action>: Action to perform (generateMarkers|quantifyTargets|deseq). Default $action"
   echo " -s <str>: Additional arguments to snakemake"
+  echo " -t <int>: Number of cores to use. Default $threads"
   echo " -A: Use alignment pipeline instead"
   echo " -v: Only validate input, don't run pipeline"
   echo " -h: Print this help screen"
@@ -27,7 +29,7 @@ function usage() {
 
 ###############################################################################
 
-while getopts ":a:s:Avh" opt; do
+while getopts ":a:s:t:Avh" opt; do
   case $opt in
     s)
       sm_params="$OPTARG"
@@ -42,6 +44,9 @@ while getopts ":a:s:Avh" opt; do
     v)
       validate=1
       ;;
+    t)
+     threads="$OPTARG"
+     ;;
     h)
       usage
       exit 0
