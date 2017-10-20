@@ -85,5 +85,5 @@ fi
 ###############################################################################
 
 if [ $validate -eq 0 ]; then
-  snakemake --snakefile "$sm_file" --use-conda --configfile "$configfile" --conda-prefix "$SCRIPTDIR/.snakemake/conda" $sm_params $action
+  snakemake --snakefile "$sm_file" --cores "$threads" --use-conda --configfile "$configfile" --conda-prefix "$SCRIPTDIR/.snakemake/conda" $sm_params $action
 fi
