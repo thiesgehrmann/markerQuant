@@ -7,10 +7,12 @@
   "targetMap": "",
   "knockouts": "",
 
+  "remove_pcr_duplicates" : true,
 
   "star_index_params": "",
-  "star_params" : "",
-  "htseq_t" : "mRNA",
+  "star_params" : "--alignIntronMin 5 --alignIntronMax 4000 --alignEndsType EndToEnd",
+  "htseq_params" : "--mode intersection-strict",
+  "htseq_t" : "exon",
   "htseq_i" : "ID"
 }
 

@@ -13,6 +13,7 @@ dconfig.update(config)
 
 __RUN_DIR__ = os.path.abspath(dconfig["outdir"]) + "/align_run"
 __STAR_OUTDIR__ = "%s/star_align" % __RUN_DIR__
+__ALNFILTER_OUTDIR__ = "%s/align_filter" % __RUN_DIR__
 __QUANT_OUTDIR__ = "%s/quantification" % __RUN_DIR__
 __DIFF_OUTDIR__ = "%s/diffex" % __RUN_DIR__
 
@@ -38,7 +39,7 @@ rule star_index:
     genomes = dconfig["genomes"]
   output:
     index = "%s/star.idx" % __STAR_OUTDIR__
-  conda: "%s/align_env.yaml" % __PC_DIR__
+  conda: "%s/env.yaml" % __PC_DIR__
   params:
     star_index_params = dconfig['star_index_params']
   shell: """
@@ -52,7 +53,7 @@ rule star_pass_one_sample:
     index = rules.star_index.output.index
   output:
     sj = "%s/aln1.{sample}.SJ.out.tab" % __STAR_OUTDIR__
-  conda: "%s/align_env.yaml" % __PC_DIR__
+  conda: "%s/env.yaml" % __PC_DIR__
   threads: 5
   params:
     rule_outdir = __STAR_OUTDIR__,
@@ -74,8 +75,8 @@ rule star_pass_two_sample:
     fastq = lambda wildcards: dconfig["samples"][wildcards.sample]["fastq"]
   output:
     stats = "%s/aln2.{sample}.Log.final.out" % __STAR_OUTDIR__,
-    bam   = "%s/aln2.{sample}.Aligned.sortedByCoord.out.bam" % __STAR_OUTDIR__
-  conda: "%s/align_env.yaml" % __PC_DIR__
+    sam   = "%s/aln2.{sample}.Aligned.out.sam" % __STAR_OUTDIR__
+  conda: "%s/env.yaml" % __PC_DIR__
   threads: 5
   params:
     rule_outdir = __STAR_OUTDIR__,
@@ -87,29 +88,68 @@ rule star_pass_two_sample:
          --genomeDir {input.index} \
          --readFilesIn {input.fastq} \
          --outFileNamePrefix {params.rule_outdir}/aln2.{wildcards.sample}. \
-         --outSAMtype BAM SortedByCoordinate \
+         --outSAMtype SAM \
          --sjdbFileChrStartEnd {input.sj}
   """
 
 rule all_star:
   input:
-    aln = expand("%s/aln2.{sample}.Aligned.sortedByCoord.out.bam" % __STAR_OUTDIR__, sample=dconfig["samples"].keys())
+    aln = expand("%s/aln2.{sample}.Aligned.sam" % __STAR_OUTDIR__, sample=dconfig["samples"].keys())
 
 ###############################################################################
 
+rule remove_multimapped_sort:
+  input:
+    sam = lambda wildcards: "%s/aln2.%s.Aligned.out.sam" % (__STAR_OUTDIR__, wildcards.sample)
+  output:
+    bam = "%s/nomultimap.{sample}.bam" % __ALNFILTER_OUTDIR__
+  threads: 5
+  shell: """
+    cat "{input.sam}" \
+     | grep -e "\(^@\)\|\(NH:i:1\)" \
+     | samtools sort -O BAM -@ {threads} \
+     > "{output.bam}"
+  """
+
+rule remove_pcr_duplicates:
+  input:
+    bam = lambda wildcards: "%s/nomultimap.%s.bam" % (__ALNFILTER_OUTDIR__, wildcards.sample)
+  output:
+    bam = "%s/nodup.{sample}.bam" % __ALNFILTER_OUTDIR__,
+    metric = "%s/nodup.{sample}.metric" % __ALNFILTER_OUTDIR__
+  conda: "%s/env.yaml" % __PC_DIR__
+  shell: """
+    picard MarkDuplicates \
+      I="{input.bam}" \
+      O="{output.bam}" \
+      REMOVE_DUPLICATES=true \
+      METRICS_FILE="{output.metric}"
+  """
+
+###############################################################################
+
+def htseq_count_input_nodup_toggle(wildcards):
+  if dconfig["remove_pcr_duplicates"]:
+    return "%s/nodup.%s.bam" % (__ALNFILTER_OUTDIR__, wildcards.sample),
+  else:
+    return "%s/nomultimap.%s.bam" % (__ALNFILTER_OUTDIR__, wildcards.sample),
+  #fi
+#edef
+
 rule htseq_count:
   input:
-    bam = lambda wildcards: "%s/aln2.%s.Aligned.sortedByCoord.out.bam" % (__STAR_OUTDIR__, wildcards.sample),
+    bam = lambda wildcards: htseq_count_input_nodup_toggle(wildcards),
     gff = dconfig["genes"]
   output:
     count = "%s/count.{sample}.tsv" % __QUANT_OUTDIR__
-  conda: "%s/align_env.yaml" % __PC_DIR__
+  conda: "%s/env.yaml" % __PC_DIR__
   params:
     stranded = "--stranded=yes" if dconfig["strandSpecific"] == 1 else "--stranded=no",
-    tparam = "-t %s"% dconfig["htseq_t"] if "htseq_t" in config else "-t gene",
-    iparam = "-i %s"% dconfig["htseq_i"] if "htseq_i" in config else "-i gene"
+    tparam = "-t %s"% dconfig["htseq_t"],
+    iparam = "-i %s"% dconfig["htseq_i"],
+    htseq_params = dconfig["htseq_params"]
   shell: """
-    htseq-count {params.stranded} {params.tparam} {params.iparam} -f bam -r pos {input.bam} {input.gff} > {output.count}
+    htseq-count {params.stranded} {params.htseq_params} {params.tparam} {params.iparam} -f bam -r pos {input.bam} {input.gff} > {output.count}
   """
 
 rule quantifyTargets:

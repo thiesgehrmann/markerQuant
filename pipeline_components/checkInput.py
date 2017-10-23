@@ -34,7 +34,7 @@ warnings = []
 filegroups = [ ("genomes", "genome", True) ]
 
 if action != "align":
-  filegroups += [ ("genomes", "genome", True), ("transcriptome", "transcriptome", False) ]
+  filegroups += [ ("targets", "target", True), ("transcriptome", "transcriptome", False) ]
 #fi
 
 for (key, title, required) in filegroups:
