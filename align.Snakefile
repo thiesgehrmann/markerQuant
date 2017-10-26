@@ -128,8 +128,33 @@ rule remove_pcr_duplicates:
 
 ###############################################################################
 
-def htseq_count_input_nodup_toggle(wildcards):
+def remove_mismatched_input_toggle(wildcards):
   if dconfig["remove_pcr_duplicates"]:
+    return "%s/nodup.%s.bam" % (__ALNFILTER_OUTDIR__, wildcards.sample),
+  else:
+    return "%s/nomultimap.%s.bam" % (__ALNFILTER_OUTDIR__, wildcards.sample),
+  #fi
+#edef
+
+rule remove_mismatched:
+  input:
+    bam = lambda wildcards: remove_mismatched_input_toggle(wildcards)
+  output:
+    bam = "%s/nomismatches.{sample}.bam" % __ALNFILTER_OUTDIR__
+  conda: "%s/env.yaml" % __PC_DIR__
+  params:
+    max = dconfig["remove_mismatched_reads_max"] + 1
+  shell: """
+    bamtools filter -tag "nM:<{params.max}" -in "{input.bam}" -out "{output.bam}"
+  """
+  
+
+###############################################################################
+
+def htseq_count_input_nodup_toggle(wildcards):
+  if dconfig["remove_mismatched_reads"]:
+    return "%s/nomismatches.%s.bam" % (__ALNFILTER_OUTDIR__, wildcards.sample)
+  elif dconfig["remove_pcr_duplicates"]:
     return "%s/nodup.%s.bam" % (__ALNFILTER_OUTDIR__, wildcards.sample),
   else:
     return "%s/nomultimap.%s.bam" % (__ALNFILTER_OUTDIR__, wildcards.sample),

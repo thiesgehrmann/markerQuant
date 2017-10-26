@@ -8,6 +8,8 @@
   "knockouts": "",
 
   "remove_pcr_duplicates" : true,
+  "remove_mismatched_reads": true,
+  "remove_mismatched_reads_max" : 1,
 
   "star_index_params": "",
   "star_params" : "--alignIntronMin 5 --alignIntronMax 4000 --alignEndsType EndToEnd",
