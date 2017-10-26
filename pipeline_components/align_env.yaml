@@ -1,7 +1,0 @@
-channels:
- - bioconda
-dependencies:
-  - star
-  - htseq
-  - bamtools
-  - bioconductor-deseq2
