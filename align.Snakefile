@@ -104,6 +104,7 @@ rule remove_multimapped_sort:
   output:
     bam = "%s/nomultimap.{sample}.bam" % __ALNFILTER_OUTDIR__
   threads: 5
+  conda: "%s/env.yaml" % __PC_DIR__
   shell: """
     cat "{input.sam}" \
      | grep -e "\(^@\)\|\(NH:i:1\)" \
