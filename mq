@@ -75,7 +75,7 @@ if [ ! -e "$configfile" ]; then
   exit 1
 fi
 
-$SCRIPTDIR/pipeline_components/checkInput.py "$configfile" "$action"
+$SCRIPTDIR/pipeline_components/checkInput.py "$configfile" "$type"
 checkres=$?
 if [ ! $checkres -eq 0 ]; then
   exit $checkres
