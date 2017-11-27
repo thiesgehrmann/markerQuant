@@ -80,11 +80,12 @@ rule star_pass_two_sample:
   threads: 5
   params:
     rule_outdir = __STAR_OUTDIR__,
-    star_params = dconfig["star_params"]
+    star_params = dconfig["star_params"],
+    starIntronMotif = "" if dconfig["strandSpecific"] else "--outSAMstrandField intronMotif"
   shell: """
     STAR --runMode alignReads \
          --runThreadN {threads} \
-         {params.star_params} \
+         {params.star_params} {params.starIntronMotif} \
          --genomeDir {input.index} \
          --readFilesIn {input.fastq} \
          --outFileNamePrefix {params.rule_outdir}/aln2.{wildcards.sample}. \
@@ -170,7 +171,7 @@ rule htseq_count:
     count = "%s/count.{sample}.tsv" % __QUANT_OUTDIR__
   conda: "%s/env.yaml" % __PC_DIR__
   params:
-    stranded = "--stranded=yes" if dconfig["strandSpecific"] == 1 else "--stranded=no",
+    stranded = "--stranded=yes" if dconfig["strandSpecific"] else "--stranded=no",
     tparam = "-t %s"% dconfig["htseq_t"],
     iparam = "-i %s"% dconfig["htseq_i"],
     htseq_params = dconfig["htseq_params"]
@@ -202,6 +203,28 @@ rule quantifyTargets:
       #ewith
     #fi
 
+rule sampleFragLengthMean:
+  input:
+    sam = lambda wildcards: htseq_count_input_nodup_toggle(wildcards) 
+  output:
+    fragLen = "%s/fragLengthMean.{sample}.tsv" % __QUANT_OUTDIR__
+  conda: "%s/env.yaml" % __PC_DIR__
+  params:
+    script = "%s/fragLengthMean.sh" % __PC_DIR__,
+    sampleSize = dconfig["fragLengthMeanSubsampleSize"]
+  shell: """
+    {params.script} "{input.sam}" "{params.sampleSize}" "{wildcards.sample}" "{output.fragLen}"
+  """
+
+rule fragLengthMeans:
+  input:
+    tsvs = expand("%s/fragLengthMean.{sample}.tsv" % __QUANT_OUTDIR__, sample=dconfig["samples"].keys())
+  output:
+    fragLengthMeans = "%s/fragLengthMean.tsv" % __QUANT_OUTDIR__
+  shell: """
+    cat {input.tsvs} > {output.fragLengthMeans}
+  """
+
 ###############################################################################
 
 include: "%s/deseq.Snakefile" % __PC_DIR__
@@ -209,9 +232,22 @@ include: "%s/deseq.Snakefile" % __PC_DIR__
 rule deseq:
   input:
     tests = rules.deseqTests.output.tests,
-    norm  = rules.deseqNorm.output.norm,
-    map   = rules.deSeqMapTargetNames.output
+    norm  = rules.normalize.output.norm,
+    map   = rules.deSeqMapTargetNames.output if dconfig["targetMap"] is not None else []
 
 ###############################################################################
 
+#def _input_nodup_toggle(wildcards):
+#  if dconfig["remove_mismatched_reads"]:
+#    return "%s/nomismatches.%s.bam" % (__ALNFILTER_OUTDIR__, wildcards.sample)
+#  elif dconfig["remove_pcr_duplicates"]:
+#    return "%s/nodup.%s.bam" % (__ALNFILTER_OUTDIR__, wildcards.sample),
+#  else:
+#    return "%s/nomultimap.%s.bam" % (__ALNFILTER_OUTDIR__, wildcards.sample),
+#  #fi
+##edef
+#
+#rule cuffquantFPKM:
+#  input:
+#    bam = 
 

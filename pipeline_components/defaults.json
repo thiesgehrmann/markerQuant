@@ -1,6 +1,6 @@
 {
   "outdir" : "./outdir",
-  "strandSpecific" : 0,
+  "strandSpecific" : false,
   "minQual" : "25",
   "k" : 21,
 
@@ -15,6 +15,9 @@
   "star_params" : "--alignIntronMin 5 --alignIntronMax 4000 --alignEndsType EndToEnd",
   "htseq_params" : "--mode intersection-strict",
   "htseq_t" : "exon",
-  "htseq_i" : "ID"
+  "htseq_i" : "Parent",
+
+  "fragLengthMeanSubsampleSize" : 1000,
+  "norm_method" : "tmm"
 }
 

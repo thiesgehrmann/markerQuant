@@ -91,13 +91,20 @@ else:
   #efor
 #fi
 
+if len(replicate_groups) < 2:
+  warnings.append("We can't normalize properly with only one condition. We will calculate a mean of the FPKMs for each of the replicates.")
+#fi 
+
 if "tests" not in config:
   warnings.append("No diff. ex. tests defined.")
 else:
   for test in config["tests"]:
     if len(test) != 2:
       errors.append("Test '%s' is invalid, they must always contain two conditions." % ','.join(test))
+    elif test[0] == test[1]:
+      errors.append("Test '%s' is invalid, the conditions must be different." % ','.join(test))
     #fi
+
     for condition in test:
       if condition not in replicate_groups:
         errors.append("Replicate group (condition) '%s' is unknown." % condition)

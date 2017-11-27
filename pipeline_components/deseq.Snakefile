@@ -42,13 +42,29 @@ rule deseqTests:
     Rscript {params.deseq_adjust} {output.tests}.combined {output.tests}
   """
 
+rule scriptNorm:
+  input:
+    quant       = rules.quantifyTargets.output.quant,
+    sample_info = rules.deseqSampleInfoTable.output.table,
+    frag_length  = rules.fragLengthMeans.output.fragLengthMeans
+  output:
+    norm = "%s/quantification.script.normalized.tsv" % __DIFF_OUTDIR__
+  params:
+    script_loc         = "%s/normalize_script.py" % __PC_DIR__,
+    norm_type_param    = dconfig["norm_method"],
+    feature_type_param = dconfig["htseq_t"],
+    attr_group_param   = dconfig["htseq_i"],
+    gff_file           = dconfig["genes"]
+  shell: """
+    {params.script_loc} "{params.gff_file}" "{input.quant}" "{input.sample_info}" "{input.frag_length}" "{params.attr_group_param}" "{params.feature_type_param}" "{params.norm_type_param}" "{output.norm}" 
+  """
 
 rule deseqNorm:
   input:
     quant       = rules.quantifyTargets.output.quant,
     sample_info = rules.deseqSampleInfoTable.output.table
   output:
-    norm = "%s/quantification.normalized.tsv" %__DIFF_OUTDIR__
+    norm = "%s/quantification.deseq.normalized.tsv" %__DIFF_OUTDIR__
   conda : "%s/pipeline_components/env.yaml"% __INSTALL_DIR__
   params:
     deseq_wrapper = "%s/deseq_norm.R" % __PC_DIR__
@@ -56,11 +72,29 @@ rule deseqNorm:
     Rscript {params.deseq_wrapper} '{input.quant}' {input.sample_info} {output.norm}
   """
 
+def normalizeInputFile():
+  nConditions = len(set([ dconfig["samples"][s]["replicate_group"] for s in dconfig["samples"] ]))
+
+  if (dconfig["norm_method"] == "tmm") and (nConditions > 1):
+    return rules.deseqNorm.output.norm
+  else:
+    return rules.scriptNorm.output.norm
+  #fi
+#edef
+
+rule normalize:
+  input:
+    norm = normalizeInputFile()
+  output:
+    norm = "%s/quantification.normalized.tsv" % __DIFF_OUTDIR__
+  shell: """
+    ln -s "{input.norm}" "{output.norm}"
+  """
 
 rule deSeqMapTargetNames:
   input:
     targetMap = dconfig["targetMap"],
-    quant = rules.deseqNorm.output.norm,
+    quant = rules.normalize.output.norm,
     tests = rules.deseqTests.output.tests
   output:
     quant = "%s/quantification.normalized.map.tsv" % __DIFF_OUTDIR__,

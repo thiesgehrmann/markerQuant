@@ -38,7 +38,7 @@ rule generateMarkers:
     gaps    = "%s/gaps.fasta"    % __MARKER_OUTDIR__
   params:
     jar = __JAR__,
-    strandSpecific = "-s" if dconfig["strandSpecific"] == 1 else "",
+    strandSpecific = "-s" if dconfig["strandSpecific"] else "",
     transcriptome = "-T %s" % dconfig["transcriptome"] if ("transcriptome" in config) else "",
     k = dconfig["k"]
   conda: "%s/env.yaml" % __PC_DIR__
@@ -61,7 +61,7 @@ rule quantifyMarkers:
   params:
     jar = __JAR__,
     fastq = lambda wildcards: ','.join(dconfig["samples"][wildcards.sample]["fastq"]),
-    strandSpecific = "-s" if dconfig["strandSpecific"] == 1 else "",
+    strandSpecific = "-s" if dconfig["strandSpecific"] else "",
     minQual = dconfig["minQual"],
     k = dconfig["k"],
     knockouts = "-K %s" % dconfig["knockouts"] if dconfig["knockouts"] != "" else ""
@@ -172,6 +172,20 @@ rule quantifyTargets:
       #ewith
     #fi
 
+
+rule fragLengthMeans:
+  output:
+    fragLengthMeans = "%s/fragLengthMean.tsv" % __QUANT_OUTDIR__
+  params:
+    samples = dconfig["samples"].keys(),
+    k       = dconfig["k"]
+  run:
+    with open(outut.fragLengthMeans, "w") as ofd:
+      for sample in samples:
+        ofd.write("%s\t%d\n" % (sample, params.k))
+      #efor
+    #ewith
+
 ###############################################################################
 
 include: "%s/deseq.Snakefile" % __PC_DIR__
@@ -179,8 +193,8 @@ include: "%s/deseq.Snakefile" % __PC_DIR__
 rule deseq:
   input:
     tests = rules.deseqTests.output.tests,
-    norm  = rules.deseqNorm.output.norm,
-    map   = rules.deSeqMapTargetNames.output
+    norm  = rules.normalize.output.norm,
+    map   = rules.deSeqMapTargetNames.output if dconfig["targetMap"] != "" else []
 
 ###############################################################################
 
