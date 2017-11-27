@@ -73,6 +73,8 @@ Each of these tasks generates a different set of output files
 ## Configuration
 
 Configuration is given in a json file, (example in `testData/config.json`).
+There are a number of default parameters that are set in [the defaults.json configuration file](https://github.com/thiesgehrmann/markerQuant/blob/master/pipeline_components/defaults.json).
+For more help in setting your own parameter values, please look at the [configuration documentation](https://github.com/thiesgehrmann/markerQuant/blob/master/pipeline_components/docs/config.json)..
 
 ```python
 {
@@ -81,7 +83,7 @@ Configuration is given in a json file, (example in `testData/config.json`).
   "genomes" : "testData/genome.fasta",           #   which are unique relative to this genome
   "transcriptome" : "testData/tdh_genes.fasta",  #   and this transcriptome (can be omitted if same as targets file)
   "genes"   : "testData/tdh_genes.gff",          # Needed for the traditional pipeline in align.Snakefile
-  "strandSpecific" : 0,                          # 0 if not strand specific, 1 it yes
+  "strandSpecific" : false,                      # 0 if not strand specific, 1 it yes
   "targetMap": "",                               # If your transcript names are esoteric, you can map them to useful names with this file if necessary
   "minQual" : 25,                                # The minimum PHRED33 quality score to use for read regions that hit a marker
   # Provide here your fastq files, defining for each the sample identifier (e.g. sample_1_r1), a replicate group (e.g. sample_1), and a list of fastq files.

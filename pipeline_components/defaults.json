@@ -1,7 +1,7 @@
 {
   "outdir" : "./outdir",
   "strandSpecific" : false,
-  "minQual" : "25",
+  "minQual" : 25,
   "k" : 21,
 
   "targetMap": "",
