@@ -74,7 +74,7 @@ Each of these tasks generates a different set of output files
 
 Configuration is given in a json file, (example in `testData/config.json`).
 There are a number of default parameters that are set in [the defaults.json configuration file](https://github.com/thiesgehrmann/markerQuant/blob/master/pipeline_components/defaults.json).
-For more help in setting your own parameter values, please look at the [configuration documentation](https://github.com/thiesgehrmann/markerQuant/blob/master/docs/config.json)..
+For more help in setting your own parameter values, please look at the [configuration documentation](https://github.com/thiesgehrmann/markerQuant/blob/master/docs/config.md)..
 
 ```python
 {

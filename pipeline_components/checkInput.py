@@ -18,18 +18,29 @@ if len(sys.argv) < 3:
 configFile = sys.argv[1];
 action     = sys.argv[2];
 
+errors = []
+warnings = []
+
 config = {}
 if not(os.path.isfile(sys.argv[1])):
   errors.append("ConfigFile '%s'doesn't exist!"% sys.argv[1])
 else:
-  config = json.load(open(sys.argv[1],"r"))
+  try:
+    with open(sys.argv[1],"r") as ifd:
+      config = json.load(ifd)
+    #ewith
+  except json.decoder.JSONDecodeError as error:
+    errors.append("JSON error: {0}".format(error))
+    config = {}
+  except:
+    errors.append("Could not read JSON file.")
+    config = {}
+  #etry
 #fi
 dconfig = json.load(open("%s/defaults.json" % __INSTALL_DIR__,"r"))
 
 ###############################################################################
 
-errors = []
-warnings = []
 
 filegroups = [ ("genomes", "genome", True) ]
 
