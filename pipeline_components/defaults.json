@@ -7,7 +7,7 @@
   "targetMap": "",
   "knockouts": "",
 
-  "remove_pcr_duplicates" : true,
+  "remove_pcr_duplicates" : false,
   "remove_mismatched_reads": true,
   "remove_mismatched_reads_max" : 1,
 

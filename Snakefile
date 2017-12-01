@@ -192,7 +192,7 @@ include: "%s/deseq.Snakefile" % __PC_DIR__
 
 rule deseq:
   input:
-    tests = rules.deseqTests.output.tests,
+    tests = rules.deseqTests.output.tests if len(dconfig["tests"]) > 0 else [],
     norm  = rules.normalize.output.norm,
     map   = rules.deSeqMapTargetNames.output if dconfig["targetMap"] != "" else []
 
