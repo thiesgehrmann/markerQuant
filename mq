@@ -96,7 +96,7 @@ if [ ! $checkres -eq 0 ]; then
   exit $checkres
 fi
 
-#Check for snakemake and conda
+#Check for snakemake and conda before running
 if [ ! `programExists snakemake` -eq 0 ]; then
   echo "Error: snakemake not found in path."
   exit 1
