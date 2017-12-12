@@ -194,7 +194,8 @@ rule deseq:
   input:
     tests = rules.deseqTests.output.tests if len(dconfig["tests"]) > 0 else [],
     norm  = rules.normalize.output.norm,
-    map   = rules.deSeqMapTargetNames.output if dconfig["targetMap"] != "" else []
+    testsMap = rules.deSeqMapTargetNamesTests.output if ( (len(dconfig["tests"]) > 0) and (dconfig["targetMap"] != "")) else [],
+    quantMap = rules.deSeqMapTargetNamesQuant.output if (dconfig["targetMap"] != "") else []
 
 ###############################################################################
 

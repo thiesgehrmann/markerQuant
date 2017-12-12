@@ -29,6 +29,21 @@ function usage() {
 
 ###############################################################################
 
+function programExists() {
+  local progName="$1"
+
+  which "$progName" &>/dev/null
+
+  if [ ! $? -eq 0 ]; then
+    echo 1
+  else
+    echo 0
+  fi
+
+}
+
+###############################################################################
+
 while getopts ":a:s:t:Avh" opt; do
   case $opt in
     s)
@@ -81,6 +96,16 @@ if [ ! $checkres -eq 0 ]; then
   exit $checkres
 fi
 
+#Check for snakemake and conda
+if [ ! `programExists snakemake` -eq 0 ]; then
+  echo "Error: snakemake not found in path."
+  exit 1
+fi
+
+if [ ! `programExists conda` -eq 0 ]; then
+  echo "Error: conda not found in path."
+  exit 1
+fi
 
 ###############################################################################
 

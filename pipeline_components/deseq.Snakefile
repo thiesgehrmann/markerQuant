@@ -91,16 +91,23 @@ rule normalize:
     ln -s "{input.norm}" "{output.norm}"
   """
 
-rule deSeqMapTargetNames:
+rule deSeqMapTargetNamesTests:
   input:
     targetMap = dconfig["targetMap"],
-    quant = rules.normalize.output.norm,
     tests = rules.deseqTests.output.tests
   output:
-    quant = "%s/quantification.normalized.map.tsv" % __DIFF_OUTDIR__,
-    tests = "%s/tests.map.tsv" % __DIFF_OUTDIR__,
+    tests = "%s/tests.map.tsv" % __DIFF_OUTDIR__
+  run:
+    import utils
+    utils.mapTargetNames(input.targetMap, input.tests, output.tests)
+
+rule deSeqMapTargetNamesQuant:
+  input:
+    targetMap = dconfig["targetMap"],
+    quant = rules.normalize.output.norm
+  output:
+    quant = "%s/quantification.normalized.map.tsv" % __DIFF_OUTDIR__
   run:
     import utils
     utils.mapTargetNames(input.targetMap, input.quant, output.quant)
-    utils.mapTargetNames(input.targetMap, input.tests, output.tests)
 
