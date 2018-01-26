@@ -55,6 +55,7 @@ rule scriptNorm:
     feature_type_param = dconfig["htseq_t"],
     attr_group_param   = dconfig["htseq_i"],
     gff_file           = dconfig["genes"]
+  conda: "%s/pipeline_components/env.yaml"% __INSTALL_DIR__
   shell: """
     {params.script_loc} "{params.gff_file}" "{input.quant}" "{input.sample_info}" "{input.frag_length}" "{params.attr_group_param}" "{params.feature_type_param}" "{params.norm_type_param}" "{output.norm}" 
   """
