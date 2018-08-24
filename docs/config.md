@@ -14,7 +14,7 @@ For a complete, functioning configuration file, that works for both the markerqu
 |genomes|The genome in which markers should be unique to in the marker quant pipeline, and to which reads are aligned in the alignment pipeline.|
 |transcriptome|The transcriptome to which markers should be unique (if same as targets, can be left empty).|
 |genes|The GFF3 file describing genes on the genome.|
-|samples|A structure of samples, which contain locations for FASTQ files.|
+|samples|A structure of samples, which contain locations for FASTQ files. (Note, they should not be gzipped).|
 |tests| A list of conditions between differential expression tests will be conducted.| 
 
 ## Configuration variables
