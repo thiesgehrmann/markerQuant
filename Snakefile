@@ -70,7 +70,8 @@ rule quantifyMarkers:
     java -Xmx100G -jar {params.jar} quant -m {input.markers} -g {input.gaps} -f {params.fastq} -k {params.k} -M {output.markerQuant} -T {output.targetQuant} {params.knockouts} {params.strandSpecific} -q {params.minQual} 2>&1 \
      | tee {output.logfile} \
      | grep "^#Found Knockout:" -A 4 \
-     > "{output.kohits}"
+     > "{output.kohits}" \
+     | echo -en ""
   """
 
 rule quantifyAllMarkers:
