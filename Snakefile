@@ -64,14 +64,13 @@ rule quantifyMarkers:
     strandSpecific = "-s" if dconfig["strandSpecific"] else "",
     minQual = dconfig["minQual"],
     k = dconfig["k"],
-    knockouts = "-K %s" % dconfig["knockouts"] if dconfig["knockouts"] != "" else ""
+    knockouts = "-K %s" % dconfig["knockouts"] if dconfig["knockouts"] != "" else "",
+    knockouts_cmds = lambda wc: ('| grep "^#Found Knockout:" -A 4 > %s' % "%s/ko_hits.%s.fastq" % (__QUANT_OUTDIR__, wc.sample)) if dconfig["knockouts"] != "" else ""
   conda: "%s/env.yaml" % __PC_DIR__
   shell: """
+    touch {output.kohits}
     java -Xmx100G -jar {params.jar} quant -m {input.markers} -g {input.gaps} -f {params.fastq} -k {params.k} -M {output.markerQuant} -T {output.targetQuant} {params.knockouts} {params.strandSpecific} -q {params.minQual} 2>&1 \
-     | tee {output.logfile} \
-     | grep "^#Found Knockout:" -A 4 \
-     > "{output.kohits}" \
-     | echo -en ""
+     | tee {output.logfile} {params.knockouts_cmds}
   """
 
 rule quantifyAllMarkers:
